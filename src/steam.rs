@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{CString, c_char, c_int, c_void};
 
 use windows::{
     Win32::{
@@ -11,9 +11,9 @@ use windows::{
 use crate::error::AppError;
 
 type CreateInterfaceFn = unsafe extern "C" fn(
-    version: *const std::ffi::c_char,
-    return_code: *mut std::ffi::c_void,
-) -> *mut std::ffi::c_int;
+    version: *const c_char,
+    return_code: *mut c_void,
+) -> *mut c_int;
 
 pub struct Steam {
     pub module: HMODULE,
@@ -42,7 +42,7 @@ impl Steam {
         let address = unsafe {
             c_interface(
                 CString::new("SteamClient018").unwrap().as_ptr(),
-                std::ptr::null_mut::<std::ffi::c_void>(),
+                std::ptr::null_mut::<c_void>(),
             )
         };
 
