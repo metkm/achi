@@ -1,3 +1,4 @@
+mod games;
 mod interfaces;
 mod steam;
 
@@ -19,4 +20,9 @@ fn main() {
     let is_logged_on = steam_user.get_is_logged_on();
 
     println!("steam id {:?} - logged on - {:?}", steam_id, is_logged_on);
+
+    let steam_apps = client.get_steam_apps(user, pipe);
+
+    let data = steam_apps.get_appdata(480, "name");
+    println!("{:?} app data", data.unwrap())
 }

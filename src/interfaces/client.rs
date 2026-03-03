@@ -34,17 +34,34 @@ impl SteamClient {
         user: std::ffi::c_int,
         pipe: std::ffi::c_int,
     ) -> crate::interfaces::user::SteamUser {
-        let mut native_version = String::from("SteamUser012\0");
-
         let result = unsafe {
             (self.vtable.get_isteam_user)(
                 self.object_address,
                 user,
                 pipe,
-                native_version.as_mut_ptr() as *mut i8,
+                String::from("SteamUser012\0").as_mut_ptr() as *mut i8,
             )
         };
 
         crate::interfaces::user::SteamUser::new(result)
+    }
+
+    pub fn get_steam_apps(
+        &self,
+        user: std::ffi::c_int,
+        pipe: std::ffi::c_int,
+    ) -> crate::interfaces::apps::Apps {
+        let result = unsafe {
+            (self.vtable.get_isteam_apps)(
+                self.object_address,
+                user,
+                pipe,
+                String::from("STEAMAPPS_INTERFACE_VERSION001\0").as_mut_ptr() as *mut i8,
+            )
+        };
+
+        println!("{:?}-", result);
+
+        crate::interfaces::apps::Apps::new(result)
     }
 }

@@ -27,7 +27,7 @@ impl SteamUser {
         unsafe { (self.vtable.get_steam_id)(self.object_address, &mut steam_id) };
         steam_id
     }
-    
+
     pub fn get_is_logged_on(&self) -> bool {
         unsafe { (self.vtable.logged_on)(self.object_address) }
     }
