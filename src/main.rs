@@ -15,9 +15,8 @@ fn main() {
     let user = client.connect_to_global_user(pipe);
     let steam_user = client.get_steam_user(user, pipe);
 
-    println!(
-        "steam user and it's id {:?} - {:?}",
-        steam_user,
-        steam_user.get_steam_id()
-    );
+    let steam_id = steam_user.get_steam_id();
+    let is_logged_on = steam_user.get_is_logged_on();
+
+    println!("steam id {:?} - logged on - {:?}", steam_id, is_logged_on);
 }

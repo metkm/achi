@@ -45,8 +45,6 @@ impl SteamClient {
             )
         };
 
-        println!("{:?} - {:?} - {:?}", result, user, pipe);
-
         crate::interfaces::user::SteamUser::new(result)
     }
 }

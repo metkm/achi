@@ -7,9 +7,7 @@ use crate::interfaces::native::CallableDefaultNativeFunction;
 pub struct ISteamUser012Functions {
     pub get_hsteam_user: CallableDefaultNativeFunction,
 
-    pub logged_on: CallableDefaultNativeFunction,
-
-    // ONLY the one you use stays typed
+    pub logged_on: unsafe extern "C" fn(this: *mut c_int) -> bool,
     pub get_steam_id: unsafe extern "C" fn(this: *mut c_int, steam_id: *mut u64),
 
     pub initiate_game_connection: CallableDefaultNativeFunction,
