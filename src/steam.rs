@@ -25,17 +25,14 @@ impl Steam {
         Self { module }
     }
 
-    pub fn get_export_function<T>(&self, name: &str) -> T
-    where
-        T: Copy,
-    {
+    pub fn get_export_function<T>(&self, name: &str) -> T {
         let pc = PCSTR(name.as_ptr());
         let fnc = unsafe { GetProcAddress(self.module, pc).unwrap() };
 
         unsafe { std::mem::transmute_copy(&fnc) }
     }
 
-    pub fn create_interface<T: crate::wrappers::Wrapper>(&self) -> T {
+    pub fn create_interface<T: crate::interfaces::Wrapper>(&self) -> T {
         let c_interface = self.get_export_function::<CreateInterfaceFn>("CreateInterface\0");
 
         let address = unsafe {
@@ -45,7 +42,6 @@ impl Steam {
             )
         };
 
-        let res = T::new(address);
-        res
+        T::new(address)
     }
 }
