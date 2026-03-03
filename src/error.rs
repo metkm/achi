@@ -18,4 +18,10 @@ pub enum AppError {
 
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    RequestError(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    RequestParseError(#[from] serde_xml_rs::Error),
 }
