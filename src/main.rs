@@ -26,8 +26,8 @@ fn main() {
 
     let steam_apps001 = client.get_steam_apps001(user, pipe);
 
-    let data = steam_apps001.get_appdata(480, "name");
-    println!("App name {:?}", data.unwrap());
+    // let data = steam_apps001.get_appdata(480, "name");
+    // println!("App name {:?}", data.unwrap());
 
     let steam_apps008 = client.get_steam_apps008(user, pipe);
 

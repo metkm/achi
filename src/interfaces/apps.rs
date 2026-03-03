@@ -40,7 +40,7 @@ impl Apps001 {
             return None;
         }
 
-        unsafe { buffer.set_len(out_len as usize); };
+        unsafe { buffer.set_len(out_len as usize - 1); };
 
         let Ok(st) = String::from_utf8(buffer) else {
             return None
