@@ -1,3 +1,5 @@
+use crate::games::get_game_list;
+
 mod games;
 mod interfaces;
 mod steam;
@@ -22,8 +24,19 @@ fn main() {
 
     println!("steam id {:?} - logged on - {:?}", steam_id, is_logged_on);
 
-    let steam_apps = client.get_steam_apps(user, pipe);
+    let steam_apps001 = client.get_steam_apps001(user, pipe);
 
-    let data = steam_apps.get_appdata(480, "name");
-    println!("App name {:?}", data.unwrap())
+    let data = steam_apps001.get_appdata(480, "name");
+    println!("App name {:?}", data.unwrap());
+
+    let steam_apps008 = client.get_steam_apps008(user, pipe);
+
+    for id in get_game_list().unwrap() {
+        if !steam_apps008.is_subscribed_app(id) {
+            continue;
+        }
+
+        let name = steam_apps001.get_appdata(id, "name").unwrap();
+        println!("id: {:?} -  name: {:?}", id, name);
+    }
 }

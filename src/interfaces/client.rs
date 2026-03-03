@@ -46,11 +46,11 @@ impl SteamClient {
         crate::interfaces::user::SteamUser::new(result)
     }
 
-    pub fn get_steam_apps(
+    pub fn get_steam_apps001(
         &self,
         user: std::ffi::c_int,
         pipe: std::ffi::c_int,
-    ) -> crate::interfaces::apps::Apps {
+    ) -> crate::interfaces::apps::Apps001 {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
                 self.object_address,
@@ -62,6 +62,25 @@ impl SteamClient {
             )
         };
 
-        crate::interfaces::apps::Apps::new(result)
+        crate::interfaces::apps::Apps001::new(result)
+    }
+
+    pub fn get_steam_apps008(
+        &self,
+        user: std::ffi::c_int,
+        pipe: std::ffi::c_int,
+    ) -> crate::interfaces::apps::Apps008 {
+        let result = unsafe {
+            (self.vtable.get_isteam_apps)(
+                self.object_address,
+                user,
+                pipe,
+                CString::new("STEAMAPPS_INTERFACE_VERSION008")
+                    .unwrap()
+                    .as_ptr(),
+            )
+        };
+
+        crate::interfaces::apps::Apps008::new(result)
     }
 }
