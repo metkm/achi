@@ -38,14 +38,23 @@ impl Steam {
                 PCWSTR(target_path.as_ptr()),
                 None,
                 LOAD_WITH_ALTERED_SEARCH_PATH,
-            )?
+            )
+            .map_err(|_| {
+                AppError::CantLoadSteamClientModule(
+                    String::from_utf16(&target_path).unwrap_or_else(|_| String::from("")),
+                )
+            })?
         };
 
         Ok(Self { module })
     }
 
     pub fn get_install_path() -> Result<String, AppError> {
-        let st = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("SOFTWARE\\Valve\\Steam")?;
+        let target = "SOFTWARE\\Valve\\Steam";
+
+        let st = RegKey::predef(HKEY_LOCAL_MACHINE)
+            .open_subkey(target)
+            .map_err(|_| AppError::RegistryNotFound(target.to_string()))?;
 
         let path: String = st.get_value("InstallPath")?;
 
@@ -59,8 +68,10 @@ impl Steam {
         unsafe { std::mem::transmute_copy(&fnc) }
     }
 
-    pub fn create_interface<T: crate::interfaces::Wrapper>(&self) -> Option<T> {
-        let c_interface = self.get_export_function::<CreateInterfaceFn>("CreateInterface\0")?;
+    pub fn create_interface<T: crate::interfaces::Wrapper>(&self) -> Result<T, AppError> {
+        let c_interface = self
+            .get_export_function::<CreateInterfaceFn>("CreateInterface\0")
+            .ok_or(AppError::ErrorCreatingInterface)?;
 
         let address = unsafe {
             c_interface(
@@ -69,6 +80,6 @@ impl Steam {
             )
         };
 
-        Some(T::new(address))
+        Ok(T::new(address))
     }
 }

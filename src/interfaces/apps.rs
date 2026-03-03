@@ -15,7 +15,7 @@ impl Wrapper for Apps001 {
 
         Self {
             object_address: address,
-            vtable: unsafe { (*face.vtable).clone() },
+            vtable: unsafe { *face.vtable },
         }
     }
 }
@@ -64,7 +64,7 @@ impl Wrapper for Apps008 {
 
         Self {
             object_address: address,
-            vtable: unsafe { (*face.vtable).clone() },
+            vtable: unsafe { *face.vtable },
         }
     }
 }

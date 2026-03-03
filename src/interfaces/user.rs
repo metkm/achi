@@ -16,7 +16,7 @@ impl Wrapper for SteamUser {
 
         Self {
             object_address: address,
-            vtable: unsafe { (*face.vtable).clone() },
+            vtable: unsafe { *face.vtable },
         }
     }
 }

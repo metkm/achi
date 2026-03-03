@@ -18,7 +18,7 @@ impl Wrapper for SteamClient {
 
         Self {
             object_address: address,
-            vtable: unsafe { (*face.vtable).clone() },
+            vtable: unsafe { *face.vtable },
         }
     }
 }
@@ -28,7 +28,7 @@ impl SteamClient {
         let result = unsafe { (self.vtable.create_steam_pipe)(self.object_address) };
 
         if result == 0 {
-            Err(AppError::CantCreateStreamPipe)
+            Err(AppError::ErrorCreatingStreamPipe)
         } else {
             Ok(result)
         }
