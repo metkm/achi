@@ -9,7 +9,7 @@ use windows::{
 type CreateInterfaceFn = unsafe extern "C" fn(
     version: *const std::ffi::c_char,
     return_code: *mut std::ffi::c_void,
-) -> *mut std::ffi::c_uint;
+) -> *mut std::ffi::c_int;
 
 pub struct Steam {
     pub module: HMODULE,
@@ -31,8 +31,6 @@ impl Steam {
     {
         let pc = PCSTR(name.as_ptr());
         let fnc = unsafe { GetProcAddress(self.module, pc).unwrap() };
-
-        println!("{:?}", fnc);
 
         unsafe { std::mem::transmute_copy(&fnc) }
     }

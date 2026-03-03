@@ -12,5 +12,12 @@ fn main() {
         println!("failed to create pipe");
     }
 
-    println!("{:?}", pipe);
+    let user = client.connect_to_global_user(pipe);
+    let steam_user = client.get_steam_user(user, pipe);
+
+    println!(
+        "steam user and it's id {:?} - {:?}",
+        steam_user,
+        steam_user.get_steam_id()
+    );
 }

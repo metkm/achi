@@ -1,5 +1,8 @@
+use std::os::raw::c_int;
+
 pub mod client;
+pub mod user;
 
 pub trait Wrapper {
-    fn new(address: *mut u32) -> Self;
+    fn new(address: *mut c_int) -> Self;
 }
