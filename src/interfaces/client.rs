@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::interfaces::Wrapper;
 use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
 
@@ -21,8 +22,14 @@ impl Wrapper for SteamClient {
 }
 
 impl SteamClient {
-    pub fn create_stream_pipe(&self) -> std::ffi::c_int {
-        unsafe { (self.vtable.create_steam_pipe)(self.object_address) }
+    pub fn create_stream_pipe(&self) -> Result<std::ffi::c_int, AppError> {
+        let result = unsafe { (self.vtable.create_steam_pipe)(self.object_address) };
+
+        if result == 0 {
+            Err(AppError::CantCreateStreamPipe)
+        } else {
+            Ok(result)
+        }
     }
 
     pub fn connect_to_global_user(&self, pipe: std::ffi::c_int) -> std::ffi::c_int {

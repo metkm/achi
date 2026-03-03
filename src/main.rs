@@ -1,20 +1,18 @@
-use crate::games::get_game_list;
+use crate::{error::AppError, games::get_game_list};
 
+mod error;
 mod games;
 mod interfaces;
 mod steam;
 
-fn main() {
-    let steam = steam::Steam::new();
+fn main() -> Result<(), AppError> {
+    let steam = steam::Steam::new()?;
 
-    let client = steam.create_interface::<interfaces::client::SteamClient>();
+    let Some(client) = steam.create_interface::<interfaces::client::SteamClient>() else {
+        return Err(AppError::CantCreateInterface);
+    };
 
-    let pipe = client.create_stream_pipe();
-
-    if pipe == 0 {
-        println!("failed to create pipe");
-        return;
-    }
+    let pipe = client.create_stream_pipe()?;
 
     let user = client.connect_to_global_user(pipe);
     let steam_user = client.get_steam_user(user, pipe);
@@ -39,4 +37,6 @@ fn main() {
         let name = steam_apps001.get_appdata(id, "name").unwrap();
         println!("id: {:?} -  name: {:?}", id, name);
     }
+
+    Ok(())
 }

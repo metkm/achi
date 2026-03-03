@@ -10,6 +10,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde-xml-rs",
+ "thiserror 2.0.18",
  "windows",
 ]
 
