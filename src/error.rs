@@ -13,7 +13,7 @@ pub enum AppError {
     #[error("can't create steam interface")]
     ErrorCreatingInterface,
 
-    #[error("can't create stream pipe")]
+    #[error("can't create stream pipe. Are you sure Steam is open?")]
     ErrorCreatingStreamPipe,
 
     #[error(transparent)]
