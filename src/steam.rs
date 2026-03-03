@@ -1,12 +1,17 @@
-use std::ffi::{CString, c_char, c_int, c_void};
+use std::{
+    ffi::{CString, c_char, c_int, c_void},
+    os::windows::ffi::OsStrExt,
+    path::Path,
+};
 
 use windows::{
     Win32::{
         Foundation::HMODULE,
-        System::LibraryLoader::{GetProcAddress, LOAD_WITH_ALTERED_SEARCH_PATH, LoadLibraryExA},
+        System::LibraryLoader::{GetProcAddress, LOAD_WITH_ALTERED_SEARCH_PATH, LoadLibraryExW},
     },
-    core::PCSTR,
+    core::{PCSTR, PCWSTR},
 };
+use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 use crate::error::AppError;
 
@@ -19,12 +24,32 @@ pub struct Steam {
 
 impl Steam {
     pub fn new() -> Result<Self, AppError> {
-        let path = b"C:\\Program Files (x86)\\Steam\\steamclient64.dll\0";
+        let install_path = Steam::get_install_path()?;
 
-        let module =
-            unsafe { LoadLibraryExA(PCSTR(path.as_ptr()), None, LOAD_WITH_ALTERED_SEARCH_PATH)? };
+        let target_path: Vec<u16> = Path::new(&install_path)
+            .join("steamclient64.dll")
+            .as_os_str()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+
+        let module = unsafe {
+            LoadLibraryExW(
+                PCWSTR(target_path.as_ptr()),
+                None,
+                LOAD_WITH_ALTERED_SEARCH_PATH,
+            )?
+        };
 
         Ok(Self { module })
+    }
+
+    pub fn get_install_path() -> Result<String, AppError> {
+        let st = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("SOFTWARE\\Valve\\Steam")?;
+
+        let path: String = st.get_value("InstallPath")?;
+
+        Ok(path)
     }
 
     pub fn get_export_function<T>(&self, name: &str) -> Option<T> {

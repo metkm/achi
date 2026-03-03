@@ -8,4 +8,6 @@ pub enum AppError {
     CantCreateInterface,
     #[error("can't create stream pipe")]
     CantCreateStreamPipe,
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
 }
