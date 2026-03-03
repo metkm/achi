@@ -1,3 +1,5 @@
+use std::ffi::CString;
+
 use windows::{
     Win32::{
         Foundation::HMODULE,
@@ -37,7 +39,7 @@ impl Steam {
 
         let address = unsafe {
             c_interface(
-                "SteamClient018\0".as_ptr() as *const i8,
+                CString::new("SteamClient018").unwrap().as_ptr(),
                 std::ptr::null_mut::<std::ffi::c_void>(),
             )
         };

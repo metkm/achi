@@ -1,7 +1,7 @@
 use crate::interfaces::Wrapper;
 use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
 
-use std::ffi::c_int;
+use std::ffi::{CString, c_int};
 
 pub struct SteamClient {
     pub vtable: ISteamClient018Functions,
@@ -39,7 +39,7 @@ impl SteamClient {
                 self.object_address,
                 user,
                 pipe,
-                String::from("SteamUser012\0").as_mut_ptr() as *mut i8,
+                CString::new("SteamUser012").unwrap().as_ptr(),
             )
         };
 
@@ -56,11 +56,11 @@ impl SteamClient {
                 self.object_address,
                 user,
                 pipe,
-                String::from("STEAMAPPS_INTERFACE_VERSION001\0").as_mut_ptr() as *mut i8,
+                CString::new("STEAMAPPS_INTERFACE_VERSION001")
+                    .unwrap()
+                    .as_ptr(),
             )
         };
-
-        println!("{:?}-", result);
 
         crate::interfaces::apps::Apps::new(result)
     }

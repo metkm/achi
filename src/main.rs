@@ -11,6 +11,7 @@ fn main() {
 
     if pipe == 0 {
         println!("failed to create pipe");
+        return;
     }
 
     let user = client.connect_to_global_user(pipe);
@@ -24,5 +25,5 @@ fn main() {
     let steam_apps = client.get_steam_apps(user, pipe);
 
     let data = steam_apps.get_appdata(480, "name");
-    println!("{:?} app data", data.unwrap())
+    println!("App name {:?}", data.unwrap())
 }

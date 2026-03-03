@@ -36,9 +36,13 @@ impl Apps {
         };
 
         if out_len == 0 {
-            return None
+            return None;
         }
 
-        Some(unsafe { CString::from_raw(buffer.as_mut_ptr()).into_string().unwrap() })
+        Some(unsafe {
+            CString::from_raw(buffer.as_mut_ptr())
+                .into_string()
+                .unwrap()
+        })
     }
 }
