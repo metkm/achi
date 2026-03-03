@@ -38,11 +38,7 @@ impl SteamClient {
         unsafe { (self.vtable.connect_to_global_user)(self.object_address, pipe) }
     }
 
-    pub fn get_steam_user(
-        &self,
-        user: c_int,
-        pipe: c_int,
-    ) -> SteamUser {
+    pub fn get_steam_user(&self, user: c_int, pipe: c_int) -> SteamUser {
         let result = unsafe {
             (self.vtable.get_isteam_user)(
                 self.object_address,
@@ -55,11 +51,7 @@ impl SteamClient {
         SteamUser::new(result)
     }
 
-    pub fn get_steam_apps001(
-        &self,
-        user: c_int,
-        pipe: c_int,
-    ) -> Apps001 {
+    pub fn get_steam_apps001(&self, user: c_int, pipe: c_int) -> Apps001 {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
                 self.object_address,
@@ -74,11 +66,7 @@ impl SteamClient {
         Apps001::new(result)
     }
 
-    pub fn get_steam_apps008(
-        &self,
-        user: c_int,
-        pipe: c_int,
-    ) -> Apps008 {
+    pub fn get_steam_apps008(&self, user: c_int, pipe: c_int) -> Apps008 {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
                 self.object_address,

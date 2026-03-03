@@ -10,10 +10,8 @@ use windows::{
 
 use crate::error::AppError;
 
-type CreateInterfaceFn = unsafe extern "C" fn(
-    version: *const c_char,
-    return_code: *mut c_void,
-) -> *mut c_int;
+type CreateInterfaceFn =
+    unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;
 
 pub struct Steam {
     pub module: HMODULE,
