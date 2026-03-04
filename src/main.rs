@@ -1,7 +1,3 @@
-use std::{fs::File, io::Write};
-
-use crate::games::get_game_list;
-
 use log::info;
 
 mod error;
@@ -9,17 +5,6 @@ mod games;
 mod interfaces;
 mod keyvalue;
 mod steam;
-
-mod models;
-
-fn get_app_achievements() {
-    let kvt = keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
-            .unwrap();
-
-    let stats = kvt
-        .get_kv_by_name("3450310")
-        .and_then(|kv| kv.get_kv_by_name("stats"));
-}
 
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_default_env()
@@ -60,7 +45,8 @@ fn main() -> anyhow::Result<()> {
     // info!("start");
     // keyvalue::Vdf::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310).unwrap();
 
-    let kvt = keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
+    let kvt =
+        keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
             .unwrap();
 
     let stats = kvt
@@ -80,7 +66,6 @@ fn main() -> anyhow::Result<()> {
                 }
             }
 
-
             // let Some(type_node) = stat.get_kv_by_name("type") else {
             //     continue
             // };
@@ -88,8 +73,6 @@ fn main() -> anyhow::Result<()> {
             // if type_node.value != "ACHIEVEMENTS" {
             //     continue
             // }
-
-            
         }
     }
 

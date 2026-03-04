@@ -1,13 +1,17 @@
 use std::{
-    ffi::c_int, fs::File, io::{BufRead, BufReader, Read, Seek}, path::Path
+    ffi::c_int,
+    fs::File,
+    io::{BufRead, BufReader, Read},
+    path::Path,
 };
 
 use log::error;
 
 use crate::error::AppError;
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 enum KeyValueType {
+    #[default]
     None = 0,
     String = 1,
     Int32 = 2,
@@ -33,12 +37,6 @@ impl From<u8> for KeyValueType {
             8 => KeyValueType::End,
             _ => Self::None,
         }
-    }
-}
-
-impl Default for KeyValueType {
-    fn default() -> Self {
-        Self::None
     }
 }
 
@@ -85,13 +83,11 @@ pub struct KeyValue {
 
 impl KeyValue {
     pub fn get_kv_by_name(&self, key: &str) -> Option<&KeyValue> {
-        if self.children.len() == 0 {
-            return None
+        if self.children.is_empty() {
+            return None;
         }
 
-        self.children
-            .iter()
-            .find(|c| c.name == key)
+        self.children.iter().find(|c| c.name == key)
     }
 
     pub fn parse_buffer(&mut self, reader: &mut BufReader<File>) {
@@ -126,32 +122,25 @@ impl KeyValue {
                     break;
                 }
                 KeyValueType::Int32 => {
-                    current.value =
-                        format!("{}", read_i32_from_bufreader(reader).unwrap_or_else(|_| 0));
+                    current.value = format!("{}", read_i32_from_bufreader(reader).unwrap_or(0));
                 }
                 KeyValueType::UInt64 => {
-                    current.value =
-                        format!("{}", read_u64_from_bufreader(reader).unwrap_or_else(|_| 0));
+                    current.value = format!("{}", read_u64_from_bufreader(reader).unwrap_or(0));
                 }
                 KeyValueType::Float32 => {
-                    current.value = format!(
-                        "{}",
-                        read_f32_from_bufreader(reader).unwrap_or_else(|_| 0.0)
-                    );
+                    current.value = format!("{}", read_f32_from_bufreader(reader).unwrap_or(0.0));
                 }
                 KeyValueType::Color => {
-                    current.value =
-                        format!("{}", read_i32_from_bufreader(reader).unwrap_or_else(|_| 0));
+                    current.value = format!("{}", read_i32_from_bufreader(reader).unwrap_or(0));
                 }
                 KeyValueType::Pointer => {
-                    current.value =
-                        format!("{}", read_i32_from_bufreader(reader).unwrap_or_else(|_| 0));
+                    current.value = format!("{}", read_i32_from_bufreader(reader).unwrap_or(0));
                 }
                 _ => break,
             };
 
             self.children.push(current);
-        };
+        }
     }
 
     pub fn from_install_path(install_path: &str, app_id: c_int) -> Result<KeyValue, AppError> {
