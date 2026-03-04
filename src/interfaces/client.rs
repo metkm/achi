@@ -28,7 +28,7 @@ impl SteamClient {
         let result = unsafe { (self.vtable.create_steam_pipe)(self.object_address) };
 
         if result == 0 {
-            Err(AppError::ErrorCreatingStreamPipe)
+            Err(AppError::SteamPipeCreation)
         } else {
             Ok(result)
         }

@@ -40,7 +40,7 @@ impl Steam {
                 LOAD_WITH_ALTERED_SEARCH_PATH,
             )
             .map_err(|_| {
-                AppError::CantLoadSteamClientModule(
+                AppError::SteamClientLoad(
                     String::from_utf16(&target_path).unwrap_or_else(|_| String::from("")),
                 )
             })?
@@ -54,7 +54,7 @@ impl Steam {
 
         let st = RegKey::predef(HKEY_LOCAL_MACHINE)
             .open_subkey(target)
-            .map_err(|_| AppError::RegistryNotFound(target.to_string()))?;
+            .map_err(|_| AppError::RegistryRead(target.to_string()))?;
 
         let path: String = st.get_value("InstallPath")?;
 
@@ -71,7 +71,7 @@ impl Steam {
     pub fn create_interface<T: crate::interfaces::Wrapper>(&self) -> Result<T, AppError> {
         let c_interface = self
             .get_export_function::<CreateInterfaceFn>("CreateInterface\0")
-            .ok_or(AppError::ErrorCreatingInterface)?;
+            .ok_or(AppError::SteamInterfaceCreation)?;
 
         let address = unsafe {
             c_interface(

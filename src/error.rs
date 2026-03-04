@@ -2,26 +2,24 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
-    // #[error(transparent)]
-    // WindowsError(#[from] windows::core::Error),
-    #[error("unable to load steamclient64.dll. Are you sure this path is correct {0}?")]
-    CantLoadSteamClientModule(String),
+    #[error("failed to load steamclient64.dll")]
+    SteamClientLoad(String),
 
-    #[error("registry path of {0} can't be opened or not found")]
-    RegistryNotFound(String),
+    #[error("failed to read registry path {0}")]
+    RegistryRead(String),
 
-    #[error("can't create steam interface")]
-    ErrorCreatingInterface,
+    #[error("failed to create steam interface")]
+    SteamInterfaceCreation,
 
-    #[error("can't create stream pipe. Are you sure Steam is open?")]
-    ErrorCreatingStreamPipe,
+    #[error("failed to create steam pipe. Is steam running?")]
+    SteamPipeCreation,
 
     #[error(transparent)]
-    IoError(#[from] std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[error(transparent)]
-    RequestError(#[from] reqwest::Error),
+    Reqwest(#[from] reqwest::Error),
 
     #[error(transparent)]
-    RequestParseError(#[from] serde_xml_rs::Error),
+    ReqwestParse(#[from] serde_xml_rs::Error),
 }
