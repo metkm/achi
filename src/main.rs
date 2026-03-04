@@ -5,6 +5,7 @@ use log::info;
 mod error;
 mod games;
 mod interfaces;
+mod keyvalue;
 mod steam;
 
 fn main() -> anyhow::Result<()> {
@@ -30,14 +31,27 @@ fn main() -> anyhow::Result<()> {
     // let data = steam_apps001.get_appdata(480, "name");
     // println!("App name {:?}", data.unwrap());
 
-    let steam_apps008 = client.get_steam_apps008(user, pipe);
+    let _steam_apps008 = client.get_steam_apps008(user, pipe);
 
-    let owned_games = get_game_list()?
-        .into_iter()
-        .filter(|id| steam_apps008.is_subscribed_app(*id))
-        .collect::<Vec<i32>>();
+    // let owned_games = get_game_list()?
+    //     .into_iter()
+    //     .filter(|id| steam_apps008.is_subscribed_app(*id))
+    //     .collect::<Vec<i32>>();
 
-    info!("found {} games", owned_games.len());
+    // info!("found {} games", owned_games.len());
+
+    // for game_id in owned_games {
+    //     println!("{:?} - {:?}", game_id, _steam_apps001.get_appdata(game_id, "name"));
+    // }
+
+    // info!("start");
+    // keyvalue::Vdf::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310).unwrap();
+
+    let kvt = keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
+            .unwrap();
+
+    // println!("{:#?}", kvt);
+    // info!("end");
 
     // for id in get_game_list().unwrap() {
     //     if !steam_apps008.is_subscribed_app(id) {

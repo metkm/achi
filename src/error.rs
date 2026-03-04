@@ -22,4 +22,7 @@ pub enum AppError {
 
     #[error(transparent)]
     ReqwestParse(#[from] serde_xml_rs::Error),
+
+    #[error(transparent)]
+    SteamVdfParse(#[from] steam_vdf_parser::Error),
 }
