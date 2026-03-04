@@ -10,6 +10,17 @@ mod interfaces;
 mod keyvalue;
 mod steam;
 
+mod models;
+
+fn get_app_achievements() {
+    let kvt = keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
+            .unwrap();
+
+    let stats = kvt
+        .get_kv_by_name("3450310")
+        .and_then(|kv| kv.get_kv_by_name("stats"));
+}
+
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_default_env()
         .filter_level(log::LevelFilter::Info)
@@ -56,29 +67,31 @@ fn main() -> anyhow::Result<()> {
         .get_kv_by_name("3450310")
         .and_then(|kv| kv.get_kv_by_name("stats"));
 
-    let mut file = File::create("asd.txt").unwrap();
-    file.write_all(format!("{:#?}", stats).as_bytes());
+    if let Some(_stats) = stats {
+        for stat in &_stats.children {
+            for bits in stat.children.iter().filter(|b| b.name == "bits") {
+                for bit in &bits.children {
+                    let name = bit
+                        .get_kv_by_name("display")
+                        .and_then(|x| x.get_kv_by_name("name"))
+                        .and_then(|x| x.get_kv_by_name("english"));
+
+                    println!("{:?}", name);
+                }
+            }
 
 
+            // let Some(type_node) = stat.get_kv_by_name("type") else {
+            //     continue
+            // };
 
-    // if let Some(_stats) = stats {
-    //     for stat in &_stats.children {
-    //         println!("{:?} - {:?}", stat.name, stat.value);
-    //     }
-    // }
+            // if type_node.value != "ACHIEVEMENTS" {
+            //     continue
+            // }
 
-    // println!("{:#?}", kvt);
-    // info!("end");
-
-    // for id in get_game_list().unwrap() {
-    //     if !steam_apps008.is_subscribed_app(id) {
-    //         continue;
-    //     }
-
-    //     let name = steam_apps001.get_appdata(id, "name").unwrap();
-    //     // println!("id: {:?} -  name: {:?}", id, name);
-    //     info!("id: {}")
-    // }
+            
+        }
+    }
 
     Ok(())
 }
