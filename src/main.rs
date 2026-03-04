@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use crate::games::get_game_list;
 
 use log::info;
@@ -49,6 +51,21 @@ fn main() -> anyhow::Result<()> {
 
     let kvt = keyvalue::KeyValue::from_install_path(&steam::Steam::get_install_path().unwrap(), 3450310)
             .unwrap();
+
+    let stats = kvt
+        .get_kv_by_name("3450310")
+        .and_then(|kv| kv.get_kv_by_name("stats"));
+
+    let mut file = File::create("asd.txt").unwrap();
+    file.write_all(format!("{:#?}", stats).as_bytes());
+
+
+
+    // if let Some(_stats) = stats {
+    //     for stat in &_stats.children {
+    //         println!("{:?} - {:?}", stat.name, stat.value);
+    //     }
+    // }
 
     // println!("{:#?}", kvt);
     // info!("end");

@@ -1,8 +1,8 @@
 use std::{
-    fs::File,
-    io::{BufRead, BufReader, Read},
-    path::Path,
+    ffi::c_int, fs::File, io::{BufRead, BufReader, Read, Seek}, path::Path
 };
+
+use log::error;
 
 use crate::error::AppError;
 
@@ -47,7 +47,7 @@ fn read_string_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<Stri
     let read_count = reader.read_until(0, &mut buffer)?;
 
     unsafe {
-        buffer.set_len(read_count);
+        buffer.set_len(read_count - 1); // -1 is for \0
     }
 
     Ok(String::from_utf8(buffer).unwrap_or("".to_string()))
@@ -77,24 +77,34 @@ fn read_f32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<f32, Ap
 #[allow(dead_code)]
 #[derive(Default, Debug)]
 pub struct KeyValue {
-    children: Vec<KeyValue>,
+    pub children: Vec<KeyValue>,
     kvt: KeyValueType,
-    name: String,
-    value: String,
+    pub name: String,
+    pub value: String,
 }
 
 impl KeyValue {
+    pub fn get_kv_by_name(&self, key: &str) -> Option<&KeyValue> {
+        if self.children.len() == 0 {
+            return None
+        }
+
+        self.children
+            .iter()
+            .find(|c| c.name == key)
+    }
+
     pub fn parse_buffer(&mut self, reader: &mut BufReader<File>) {
         loop {
             let mut type_buffer = [0];
 
             if reader.read_exact(&mut type_buffer).is_err() {
-                break None;
+                break;
             }
 
             let kvt = KeyValueType::from(type_buffer[0]);
             if kvt == KeyValueType::End {
-                break None;
+                break;
             }
 
             let mut current = KeyValue {
@@ -110,6 +120,10 @@ impl KeyValue {
                 KeyValueType::String => {
                     current.value = read_string_from_bufreader(reader)
                         .unwrap_or_else(|_| "unknown".to_string());
+                }
+                KeyValueType::WideString => {
+                    error!("Widestring is not supported");
+                    break;
                 }
                 KeyValueType::Int32 => {
                     current.value =
@@ -133,15 +147,14 @@ impl KeyValue {
                     current.value =
                         format!("{}", read_i32_from_bufreader(reader).unwrap_or_else(|_| 0));
                 }
-                KeyValueType::End => break None,
-                _ => break Some(current),
+                _ => break,
             };
 
             self.children.push(current);
         };
     }
 
-    pub fn from_install_path(install_path: &str, app_id: i32) -> Result<KeyValue, AppError> {
+    pub fn from_install_path(install_path: &str, app_id: c_int) -> Result<KeyValue, AppError> {
         let target = Path::new(install_path)
             .join("appcache")
             .join("stats")
@@ -151,8 +164,8 @@ impl KeyValue {
         let mut reader = BufReader::new(file);
 
         let mut root = KeyValue {
-            kvt: KeyValueType::None,
             name: String::from("<Root>"),
+            kvt: KeyValueType::None,
             ..Default::default()
         };
 
