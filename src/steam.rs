@@ -13,7 +13,7 @@ use windows::{
 };
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
-use crate::error::AppError;
+use crate::{error::AppError, interfaces::client::SteamClient};
 
 type CreateInterfaceFn =
     unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;
@@ -68,7 +68,7 @@ impl Steam {
         unsafe { std::mem::transmute_copy(&fnc) }
     }
 
-    pub fn create_interface<T: crate::interfaces::Wrapper>(&self) -> Result<T, AppError> {
+    pub fn get_steam_client(&self) -> Result<SteamClient, AppError> {
         let c_interface = self
             .get_export_function::<CreateInterfaceFn>("CreateInterface\0")
             .ok_or(AppError::SteamInterfaceCreation)?;
@@ -80,6 +80,6 @@ impl Steam {
             )
         };
 
-        Ok(T::new(address))
+        Ok(SteamClient::new(address))
     }
 }

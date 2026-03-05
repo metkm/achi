@@ -1,28 +1,13 @@
 use crate::error::AppError;
-use crate::interfaces::Wrapper;
 use crate::interfaces::apps::{Apps001, Apps008};
 use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
+use crate::interfaces::steam_interface;
 use crate::interfaces::user::SteamUser;
 use crate::interfaces::userstats::SteamUserStats;
 
 use std::ffi::{CString, c_int};
 
-pub struct SteamClient {
-    pub vtable: ISteamClient018Functions,
-    pub object_address: *mut c_int,
-}
-
-impl Wrapper for SteamClient {
-    fn new(address: *mut c_int) -> Self {
-        let ptr = address as *mut ISteamClient018;
-        let face = unsafe { ptr.as_mut().unwrap() };
-
-        Self {
-            object_address: address,
-            vtable: unsafe { *face.vtable },
-        }
-    }
-}
+steam_interface!(SteamClient, ISteamClient018, ISteamClient018Functions);
 
 impl SteamClient {
     pub fn create_stream_pipe(&self) -> Result<c_int, AppError> {

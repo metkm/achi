@@ -11,9 +11,9 @@ pub struct ISteamUserStats013Functions {
     pub set_stat_integer: CallableDefaultNativeFunction,
     pub update_avg_rate_stat: CallableDefaultNativeFunction,
     pub get_achievement: CallableDefaultNativeFunction,
-    
-    pub set_achievement:  unsafe extern "C" fn (this: *mut c_int, info_id: *const c_char) -> bool,
-    pub clear_achievement:  unsafe extern "C" fn (this: *mut c_int, info_id: *const c_char) -> bool,
+
+    pub set_achievement: unsafe extern "C" fn(this: *mut c_int, info_id: *const c_char) -> bool,
+    pub clear_achievement: unsafe extern "C" fn(this: *mut c_int, info_id: *const c_char) -> bool,
 
     pub get_achievement_and_unlock_time: CallableDefaultNativeFunction,
     pub store_stats: CallableDefaultNativeFunction,

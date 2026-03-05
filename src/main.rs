@@ -11,8 +11,8 @@ mod error;
 mod games;
 mod interfaces;
 mod keyvalue;
-mod steam;
 mod models;
+mod steam;
 
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_default_env()
@@ -24,22 +24,22 @@ fn main() -> anyhow::Result<()> {
     // }
 
     let steam = steam::Steam::new()?;
-    let client = steam.create_interface::<interfaces::client::SteamClient>()?;
+    let client = steam.get_steam_client()?;
 
     let pipe = client.create_stream_pipe()?;
     let user = client.connect_to_global_user(pipe);
 
-    let steam_user = client.get_steam_user(user, pipe);
+    // let steam_user = client.get_steam_user(user, pipe);
 
     // let steam_id = steam_user.get_steam_id();
     // let is_logged_on = steam_user.get_is_logged_on();
 
     // info!("user steam id: {steam_id}. Logged on: {is_logged_on}");
 
-    // let _steam_apps001 = client.get_steam_apps001(user, pipe);
+    // let steam_apps001 = client.get_steam_apps001(user, pipe);
 
-    // // let data = steam_apps001.get_appdata(480, "name");
-    // // println!("App name {:?}", data.unwrap());
+    // let data = steam_apps001.get_appdata(480, "name");
+    // println!("App name {:?}", data.unwrap());
 
     // // let steam_apps008 = client.get_steam_apps008(user, pipe);
 

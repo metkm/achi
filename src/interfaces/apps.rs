@@ -1,24 +1,9 @@
-use crate::interfaces::Wrapper;
 use crate::interfaces::native::steam_apps001::{ISteamApps001, ISteamApps001Functions};
 use crate::interfaces::native::steam_apps008::{ISteamApps008, ISteamApps008Functions};
+use crate::interfaces::steam_interface;
 use std::ffi::{CString, c_int};
 
-pub struct Apps001 {
-    vtable: ISteamApps001Functions,
-    object_address: *mut c_int,
-}
-
-impl Wrapper for Apps001 {
-    fn new(address: *mut c_int) -> Self {
-        let ptr = address as *mut ISteamApps001;
-        let face = unsafe { ptr.as_mut().unwrap() };
-
-        Self {
-            object_address: address,
-            vtable: unsafe { *face.vtable },
-        }
-    }
-}
+steam_interface!(Apps001, ISteamApps001, ISteamApps001Functions);
 
 impl Apps001 {
     pub fn get_appdata(&self, app_id: c_int, key: &str) -> Option<String> {
@@ -52,22 +37,7 @@ impl Apps001 {
     }
 }
 
-pub struct Apps008 {
-    vtable: ISteamApps008Functions,
-    object_address: *mut c_int,
-}
-
-impl Wrapper for Apps008 {
-    fn new(address: *mut c_int) -> Self {
-        let ptr = address as *mut ISteamApps008;
-        let face = unsafe { ptr.as_mut().unwrap() };
-
-        Self {
-            object_address: address,
-            vtable: unsafe { *face.vtable },
-        }
-    }
-}
+steam_interface!(Apps008, ISteamApps008, ISteamApps008Functions);
 
 impl Apps008 {
     pub fn is_subscribed_app(&self, app_id: c_int) -> bool {
