@@ -21,12 +21,6 @@ pub struct Program {
 
 impl Program {
     pub fn new(cx: &mut Context<Program>) -> Self {
-        // let client = Steam::new().and_then(|steam| steam.get_steam_client());
-
-        // if let Err(error) = &client {
-        //     error!("error loading client! {:?}", error);
-        // }
-
         let prog = Self {
             ..Default::default()
         };
