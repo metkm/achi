@@ -3,6 +3,7 @@ use crate::interfaces::Wrapper;
 use crate::interfaces::apps::{Apps001, Apps008};
 use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
 use crate::interfaces::user::SteamUser;
+use crate::interfaces::userstats::SteamUserStats;
 
 use std::ffi::{CString, c_int};
 
@@ -79,5 +80,20 @@ impl SteamClient {
         };
 
         Apps008::new(result)
+    }
+
+    pub fn get_steam_user_stats(&self, user: c_int, pipe: c_int) -> SteamUserStats {
+        let result = unsafe {
+            (self.vtable.get_isteam_user_stats)(
+                self.object_address,
+                user,
+                pipe,
+                CString::new("STEAMUSERSTATS_INTERFACE_VERSION013")
+                    .unwrap()
+                    .as_ptr(),
+            )
+        };
+
+        SteamUserStats::new(result)
     }
 }

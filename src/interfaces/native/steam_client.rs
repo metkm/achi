@@ -27,7 +27,14 @@ pub struct ISteamClient018Functions {
     pub get_isteam_matchmaking: CallableDefaultNativeFunction,
     pub get_isteam_matchmaking_servers: CallableDefaultNativeFunction,
     pub get_isteam_generic_interface: CallableDefaultNativeFunction,
-    pub get_isteam_user_stats: CallableDefaultNativeFunction,
+
+    pub get_isteam_user_stats: unsafe extern "C" fn(
+        this: *mut c_int,
+        user: c_int,
+        pipe: c_int,
+        version: *const c_char,
+    ) -> *mut c_int,
+
     pub get_isteam_gameserver_stats: CallableDefaultNativeFunction,
 
     pub get_isteam_apps: unsafe extern "C" fn(
