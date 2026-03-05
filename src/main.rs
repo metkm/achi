@@ -1,33 +1,115 @@
 #![allow(dead_code, unused)]
 #![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
 
-use std::{fs::File, io::Write};
-
-use log::info;
-
-use crate::games::get_game_list;
-
 mod error;
 mod games;
 mod interfaces;
 mod keyvalue;
 mod models;
+mod program;
 mod steam;
 
-fn main() -> anyhow::Result<()> {
+use std::borrow::Cow;
+
+use gpui::{
+    App, AppContext, Application, AssetSource, ParentElement, Render, Styled, WindowOptions, div,
+    px,
+};
+
+use gpui_component::{
+    Root, StyledExt, Theme, ThemeMode, ThemeRegistry, TitleBar,
+    button::{Button, ButtonVariants},
+};
+
+use gpui_component_assets::Assets;
+
+use crate::{program::Program, steam::Steam};
+
+use gpui::SharedString;
+use std::path::PathBuf;
+
+pub fn init(cx: &mut App) {
+    ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
+        let theme = ThemeRegistry::global(cx)
+            .themes()
+            .get("Catppuccin Mocha")
+            .cloned()
+            .unwrap();
+
+        Theme::global_mut(cx).apply_config(&theme);
+    });
+
+    // Theme::change(ThemeMode::Light, None, cx);
+
+    // let theme_name = SharedString::from("Ayu Light");
+
+    // let theme_registry = ThemeRegistry::global_mut(cx);
+
+    // if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
+    //     Theme::global_mut(cx).apply_config(&theme);
+    // }
+
+    // ThemeRegistry::global_mut(cx).apply_config;
+
+    // Load and watch themes from ./themes directory
+    // if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), cx, move |cx| {
+    //     if let Some(theme) = ThemeRegistry::global(cx)
+    //         .themes()
+    //         .get(&theme_name)
+    //         .cloned()
+    //     {
+    //         Theme::global_mut(cx).apply_config(&theme);
+    //     }
+    // }) {
+    //     tracing::error!("Failed to watch themes directory: {}", err);
+    // }
+}
+
+fn main() {
     env_logger::Builder::from_default_env()
         .filter_level(log::LevelFilter::Info)
         .init();
+
+    let application = Application::new().with_assets(Assets);
+
+    application.run(|cx| {
+        cx.text_system()
+            .add_fonts(vec![Cow::Borrowed(include_bytes!(
+                "../assets/Inter-Medium.ttf"
+            ))])
+            .unwrap();
+
+        gpui_component::init(cx);
+        init(cx);
+
+        let window_options = WindowOptions {
+            titlebar: None,
+            window_min_size: Some(gpui::Size::new(px(1050.0), px(610.0))),
+            window_background: gpui::WindowBackgroundAppearance::Opaque,
+            ..Default::default()
+        };
+
+        cx.spawn(async move |cx| {
+            cx.open_window(window_options, |window, cx| {
+                let view = cx.new(|context| Program::new(context));
+
+                cx.new(|cx| Root::new(view, window, cx))
+            })?;
+
+            Ok::<_, anyhow::Error>(())
+        })
+        .detach();
+    });
 
     // unsafe {
     //     std::env::set_var("SteamAppId", "3164500");
     // }
 
-    let steam = steam::Steam::new()?;
-    let client = steam.get_steam_client()?;
+    // let steam = steam::Steam::new()?;
+    // let client = steam.get_steam_client()?;
 
-    let pipe = client.create_stream_pipe()?;
-    let user = client.connect_to_global_user(pipe);
+    // let pipe = client.create_stream_pipe()?;
+    // let user = client.connect_to_global_user(pipe);
 
     // let steam_user = client.get_steam_user(user, pipe);
 
@@ -86,6 +168,4 @@ fn main() -> anyhow::Result<()> {
     // //         }
     // //     }
     // // }
-
-    Ok(())
 }
