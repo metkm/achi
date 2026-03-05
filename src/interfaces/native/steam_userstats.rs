@@ -1,6 +1,6 @@
 use std::ffi::{c_char, c_int};
 
-use crate::interfaces::native::CallableDefaultNativeFunction;
+use crate::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -56,4 +56,12 @@ pub struct ISteamUserStats013Functions {
 #[repr(C)]
 pub struct ISteamUserStats013 {
     pub vtable: *const ISteamUserStats013Functions,
+}
+
+impl VTable for ISteamUserStats013 {
+    type Functions = ISteamUserStats013Functions;
+
+    fn vtable(&self) -> *const Self::Functions {
+        self.vtable
+    }
 }

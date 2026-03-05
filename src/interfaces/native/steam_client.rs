@@ -1,3 +1,5 @@
+use crate::interfaces::interface::VTable;
+
 use super::CallableDefaultNativeFunction;
 use std::ffi::{c_char, c_int};
 
@@ -73,4 +75,12 @@ pub struct ISteamClient018Functions {
 #[derive(Debug)]
 pub struct ISteamClient018 {
     pub vtable: *const ISteamClient018Functions,
+}
+
+impl VTable for ISteamClient018 {
+    type Functions = ISteamClient018Functions;
+
+    fn vtable(&self) -> *const Self::Functions {
+        self.vtable
+    }
 }

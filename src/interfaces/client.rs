@@ -1,17 +1,16 @@
 use crate::error::AppError;
-use crate::interfaces::apps::{Apps001, Apps008};
+use crate::interfaces::interface::Interface;
+use crate::interfaces::native::steam_apps001::ISteamApps001;
+use crate::interfaces::native::steam_apps008::ISteamApps008;
 use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
-use crate::interfaces::steam_interface;
-use crate::interfaces::user::SteamUser;
-use crate::interfaces::userstats::SteamUserStats;
+use crate::interfaces::native::steam_user::ISteamUser012;
+use crate::interfaces::native::steam_userstats::ISteamUserStats013;
 
 use std::ffi::{CString, c_int};
 
-steam_interface!(SteamClient, ISteamClient018, ISteamClient018Functions);
-
-impl SteamClient {
+impl Interface<ISteamClient018> {
     pub fn create_stream_pipe(&self) -> Result<c_int, AppError> {
-        let result = unsafe { (self.vtable.create_steam_pipe)(self.object_address) };
+        let result = unsafe { (self.vtable.create_steam_pipe)(self.address) };
 
         if result == 0 {
             Err(AppError::SteamPipeCreation)
@@ -21,26 +20,26 @@ impl SteamClient {
     }
 
     pub fn connect_to_global_user(&self, pipe: c_int) -> c_int {
-        unsafe { (self.vtable.connect_to_global_user)(self.object_address, pipe) }
+        unsafe { (self.vtable.connect_to_global_user)(self.address, pipe) }
     }
 
-    pub fn get_steam_user(&self, user: c_int, pipe: c_int) -> SteamUser {
+    pub fn get_steam_user(&self, user: c_int, pipe: c_int) -> Interface<ISteamUser012> {
         let result = unsafe {
             (self.vtable.get_isteam_user)(
-                self.object_address,
+                self.address,
                 user,
                 pipe,
                 CString::new("SteamUser012").unwrap().as_ptr(),
             )
         };
 
-        SteamUser::new(result)
+        Interface::<ISteamUser012>::new(result)
     }
 
-    pub fn get_steam_apps001(&self, user: c_int, pipe: c_int) -> Apps001 {
+    pub fn get_steam_apps001(&self, user: c_int, pipe: c_int) -> Interface<ISteamApps001> {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
-                self.object_address,
+                self.address,
                 user,
                 pipe,
                 CString::new("STEAMAPPS_INTERFACE_VERSION001")
@@ -49,13 +48,13 @@ impl SteamClient {
             )
         };
 
-        Apps001::new(result)
+        Interface::<ISteamApps001>::new(result)
     }
 
-    pub fn get_steam_apps008(&self, user: c_int, pipe: c_int) -> Apps008 {
+    pub fn get_steam_apps008(&self, user: c_int, pipe: c_int) -> Interface<ISteamApps008> {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
-                self.object_address,
+                self.address,
                 user,
                 pipe,
                 CString::new("STEAMAPPS_INTERFACE_VERSION008")
@@ -64,13 +63,13 @@ impl SteamClient {
             )
         };
 
-        Apps008::new(result)
+        Interface::<ISteamApps008>::new(result)
     }
 
-    pub fn get_steam_user_stats(&self, user: c_int, pipe: c_int) -> SteamUserStats {
+    pub fn get_steam_user_stats(&self, user: c_int, pipe: c_int) -> Interface<ISteamUserStats013> {
         let result = unsafe {
             (self.vtable.get_isteam_user_stats)(
-                self.object_address,
+                self.address,
                 user,
                 pipe,
                 CString::new("STEAMUSERSTATS_INTERFACE_VERSION013")
@@ -79,6 +78,6 @@ impl SteamClient {
             )
         };
 
-        SteamUserStats::new(result)
+        Interface::<ISteamUserStats013>::new(result)
     }
 }
