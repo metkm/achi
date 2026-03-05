@@ -7,10 +7,11 @@ use crate::interfaces::native::steam_user::ISteamUser012;
 use crate::interfaces::native::steam_userstats::ISteamUserStats013;
 
 use std::ffi::{CString, c_int};
+use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamClient018> {
     pub fn create_stream_pipe(&self) -> Result<c_int, AppError> {
-        let result = unsafe { (self.vtable.create_steam_pipe)(self.address) };
+        let result = unsafe { (self.vtable.create_steam_pipe)(self.address.load(SeqCst)) };
 
         if result == 0 {
             Err(AppError::SteamPipeCreation)
@@ -20,13 +21,13 @@ impl Interface<ISteamClient018> {
     }
 
     pub fn connect_to_global_user(&self, pipe: c_int) -> c_int {
-        unsafe { (self.vtable.connect_to_global_user)(self.address, pipe) }
+        unsafe { (self.vtable.connect_to_global_user)(self.address.load(SeqCst), pipe) }
     }
 
     pub fn get_steam_user(&self, user: c_int, pipe: c_int) -> Interface<ISteamUser012> {
         let result = unsafe {
             (self.vtable.get_isteam_user)(
-                self.address,
+                self.address.load(SeqCst),
                 user,
                 pipe,
                 CString::new("SteamUser012").unwrap().as_ptr(),
@@ -39,7 +40,7 @@ impl Interface<ISteamClient018> {
     pub fn get_steam_apps001(&self, user: c_int, pipe: c_int) -> Interface<ISteamApps001> {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
-                self.address,
+                self.address.load(SeqCst),
                 user,
                 pipe,
                 CString::new("STEAMAPPS_INTERFACE_VERSION001")
@@ -54,7 +55,7 @@ impl Interface<ISteamClient018> {
     pub fn get_steam_apps008(&self, user: c_int, pipe: c_int) -> Interface<ISteamApps008> {
         let result = unsafe {
             (self.vtable.get_isteam_apps)(
-                self.address,
+                self.address.load(SeqCst),
                 user,
                 pipe,
                 CString::new("STEAMAPPS_INTERFACE_VERSION008")
@@ -69,7 +70,7 @@ impl Interface<ISteamClient018> {
     pub fn get_steam_user_stats(&self, user: c_int, pipe: c_int) -> Interface<ISteamUserStats013> {
         let result = unsafe {
             (self.vtable.get_isteam_user_stats)(
-                self.address,
+                self.address.load(SeqCst),
                 user,
                 pipe,
                 CString::new("STEAMUSERSTATS_INTERFACE_VERSION013")

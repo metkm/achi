@@ -1,7 +1,9 @@
 use crate::interfaces::interface::Interface;
 use crate::interfaces::native::steam_apps001::{ISteamApps001, ISteamApps001Functions};
 use crate::interfaces::native::steam_apps008::{ISteamApps008, ISteamApps008Functions};
+
 use std::ffi::{CString, c_int};
+use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamApps001> {
     pub fn get_appdata(&self, app_id: c_int, key: &str) -> Option<String> {
@@ -11,7 +13,7 @@ impl Interface<ISteamApps001> {
 
         let out_len = unsafe {
             (self.vtable.get_app_data)(
-                self.address,
+                self.address.load(SeqCst),
                 app_id,
                 c_key.as_ptr(),
                 buffer.as_mut_ptr() as *mut i8,
@@ -37,6 +39,6 @@ impl Interface<ISteamApps001> {
 
 impl Interface<ISteamApps008> {
     pub fn is_subscribed_app(&self, app_id: c_int) -> bool {
-        (self.vtable.is_subscribed_app)(self.address, app_id)
+        (self.vtable.is_subscribed_app)(self.address.load(SeqCst), app_id)
     }
 }

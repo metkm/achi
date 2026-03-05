@@ -1,4 +1,4 @@
-use std::ffi::c_int;
+use std::{ffi::c_int, sync::{Arc, atomic::AtomicPtr}};
 
 use crate::interfaces::native::steam_user::{ISteamUser012, ISteamUser012Functions};
 
@@ -10,7 +10,7 @@ pub trait VTable {
 
 pub struct Interface<I: VTable> {
     pub vtable: I::Functions,
-    pub address: *mut c_int,
+    pub address: AtomicPtr<c_int>,
 }
 
 impl<I: VTable> Interface<I> {
@@ -20,7 +20,7 @@ impl<I: VTable> Interface<I> {
 
         Self {
             vtable: unsafe { *f.vtable() },
-            address,
+            address: AtomicPtr::new(address),
         }
     }
 }

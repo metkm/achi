@@ -1,6 +1,8 @@
 use crate::error::AppError;
 use crate::games::get_game_list;
 use crate::interfaces::interface::Interface;
+use crate::interfaces::native::steam_apps001::ISteamApps001;
+use crate::interfaces::native::steam_apps008::{self, ISteamApps008};
 use crate::interfaces::native::steam_client::ISteamClient018;
 use crate::steam::Steam;
 
@@ -16,6 +18,8 @@ use log::error;
 #[derive(Default)]
 pub struct Program {
     steam_client: Option<Interface<ISteamClient018>>,
+    steam_apps001: Option<Interface<ISteamApps001>>,
+    steam_apps008: Option<Interface<ISteamApps008>>,
     owned_games: Vec<i32>,
 }
 
@@ -39,12 +43,26 @@ impl Program {
                 let pipe = client.create_stream_pipe()?;
                 let user = client.connect_to_global_user(pipe);
 
-                Ok::<(), AppError>(())
+                let steam_apps001 = client.get_steam_apps001(user, pipe);
+                let steam_apps008 = client.get_steam_apps008(user, pipe);
+
+                Ok::<(Interface<ISteamClient018>, Interface<ISteamApps001>, Interface<ISteamApps008>), AppError>((client, steam_apps001, steam_apps008))
             }).await;
 
-            // we can show these errors in ui later.
-            if let Err(error) = result {
-                error!("{}", error);
+            match result {
+                Ok((client, apps001, apps008)) => {
+                    this.update(cx, |this, cx| {
+                        this.steam_client = Some(client);
+                        this.steam_apps001 = Some(apps001);
+                        this.steam_apps008 = Some(apps008);
+
+                        cx.notify();
+                    });
+                }
+                // we can show these errors in ui later.
+                Err(error) => {
+                    error!("{}", error);
+                }
             }
         }).detach();
     }
