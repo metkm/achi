@@ -1,15 +1,10 @@
-use gpui::Styled;
 use gpui_component::StyledExt;
 use gpui_component::scroll::ScrollableElement;
+
 use log::error;
 use std::sync::Arc;
 
-use gpui::Context;
-use gpui::IntoElement;
-use gpui::ParentElement;
-use gpui::Render;
-use gpui::RenderOnce;
-use gpui::div;
+use gpui::{Context, IntoElement, ParentElement, Render, RenderOnce, Styled, div, img, px, rgb};
 
 use crate::error::AppError;
 use crate::games::get_game_list;
@@ -64,6 +59,7 @@ impl OwnedGames {
                                 name: apps001
                                     .get_appdata(id, "name")
                                     .unwrap_or("unknown".to_string()),
+                                image_url: format!("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{id}/{}", apps001.get_appdata(id, "small_capsule/english").unwrap_or("".to_string()))
                             })
                         })
                         // .filter(|id| apps008.is_subscribed_app(*id))
@@ -103,13 +99,16 @@ impl Render for OwnedGames {
         match (self.loading, &self.error, self.fetched) {
             (false, None, true) => match self.owned_games.is_empty() {
                 true => div().child("Owned games are empty"),
-                false => div().v_flex().flex_grow().child(
-                    div().v_flex().overflow_y_scrollbar().children(
-                        self.owned_games
-                            .iter()
-                            .map(|game| div().child(format!("{} - {}", game.id, game.name))),
-                    ),
-                ),
+                false => div()
+                    .grid()
+                    .grid_cols(4)
+                    .gap_4()
+                    .children(self.owned_games.iter().map(|game| {
+                        div()
+                            .child(img(game.image_url.clone()).w_full())
+                            .child(format!("{} - {}", game.id, game.name))
+                    })),
+                
             },
             (true, None, false) => div().child("Loading"),
             (false, Some(error), true) => div().child(error.to_string()),

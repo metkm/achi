@@ -13,7 +13,7 @@ use crate::steam::Steam;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AbsoluteLength, AppContext, AsyncApp, Context, Entity, InteractiveElement, ParentElement,
-    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, px,
+    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, img, px, rgb,
 };
 
 use gpui_component::button::{Button, ButtonVariants};
@@ -116,7 +116,7 @@ impl Render for Program {
                 ))),
             Some(_) => {
                 if let Some(owned_games) = &self.owned_games {
-                    div().v_flex().flex_grow().child(owned_games.clone())
+                    div().flex().flex_grow().child(owned_games.clone())
                 } else {
                     div().child("owned games component in none for some reason")
                 }
@@ -137,7 +137,10 @@ impl Render for Program {
                     .flex_grow()
                     .overflow_scroll()
                     .p_4()
-                    .child(content),
+                    .child(content)
+                    // .child(
+                    //     img("https://pub.lbkrs.com/files/202503/vEnnmgUM6bo362ya/sdk.svg").h_24(),
+                    // ), // .child(content),
             )
     }
 }

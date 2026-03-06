@@ -4,17 +4,18 @@
 mod components;
 mod error;
 mod games;
+mod http_client;
 mod interfaces;
 mod keyvalue;
 mod models;
 mod program;
 mod steam;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, path::PathBuf, sync::Arc};
 
 use gpui::{
-    App, AppContext, Application, AssetSource, ParentElement, Render, Styled, WindowOptions, div,
-    px,
+    App, AppContext, Application, AssetSource, ParentElement, Render, SharedString, Styled,
+    WindowOptions, div, px,
 };
 
 use gpui_component::{
@@ -25,9 +26,6 @@ use gpui_component::{
 use gpui_component_assets::Assets;
 
 use crate::{program::Program, steam::Steam};
-
-use gpui::SharedString;
-use std::path::PathBuf;
 
 pub fn init(cx: &mut App) {
     ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
@@ -46,7 +44,11 @@ fn main() {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let application = Application::new().with_assets(Assets);
+    let client = http_client::ReqwestHttpClient::new().unwrap();
+
+    let application = Application::new()
+        .with_http_client(Arc::new(client))
+        .with_assets(Assets);
 
     application.run(|cx| {
         cx.text_system()
