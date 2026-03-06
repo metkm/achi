@@ -7,7 +7,7 @@ use crate::interfaces::native::steam_client::ISteamClient018;
 use crate::steam::Steam;
 
 use gpui::prelude::FluentBuilder;
-use gpui::{AppContext, AsyncApp, Context, ParentElement, Render, Styled, WeakEntity, div};
+use gpui::{AppContext, AsyncApp, Context, InteractiveElement, ParentElement, Render, Styled, WeakEntity, div};
 
 use gpui_component::button::{Button, ButtonVariants};
 use gpui_component::scroll::{ScrollableElement, ScrollbarAxis};
@@ -24,7 +24,7 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn new(cx: &mut Context<Program>) -> Self {
+    pub fn new(cx: &mut Context<Self>) -> Self {
         let prog = Self {
             ..Default::default()
         };
@@ -34,20 +34,30 @@ impl Program {
         prog
     }
 
-    fn try_initialize(&self, cx: &mut Context<Program>) {
+    fn try_initialize(&self, cx: &mut Context<Self>) {
         cx.spawn(async move |this, cx| {
-            let result = cx.background_executor().spawn(async {
-                let steam = Steam::new()?;
-                let client = steam.get_steam_client()?;
+            let result = cx
+                .background_executor()
+                .spawn(async {
+                    let steam = Steam::new()?;
+                    let client = steam.get_steam_client()?;
 
-                let pipe = client.create_stream_pipe()?;
-                let user = client.connect_to_global_user(pipe);
+                    let pipe = client.create_stream_pipe()?;
+                    let user = client.connect_to_global_user(pipe);
 
-                let steam_apps001 = client.get_steam_apps001(user, pipe);
-                let steam_apps008 = client.get_steam_apps008(user, pipe);
+                    let steam_apps001 = client.get_steam_apps001(user, pipe);
+                    let steam_apps008 = client.get_steam_apps008(user, pipe);
 
-                Ok::<(Interface<ISteamClient018>, Interface<ISteamApps001>, Interface<ISteamApps008>), AppError>((client, steam_apps001, steam_apps008))
-            }).await;
+                    Ok::<
+                        (
+                            Interface<ISteamClient018>,
+                            Interface<ISteamApps001>,
+                            Interface<ISteamApps008>,
+                        ),
+                        AppError,
+                    >((client, steam_apps001, steam_apps008))
+                })
+                .await;
 
             match result {
                 Ok((client, apps001, apps008)) => {
@@ -57,6 +67,7 @@ impl Program {
                         this.steam_apps008 = Some(apps008);
 
                         cx.notify();
+                        this.load_owned_games(cx);
                     });
                 }
                 // we can show these errors in ui later.
@@ -64,10 +75,11 @@ impl Program {
                     error!("{}", error);
                 }
             }
-        }).detach();
+        })
+        .detach();
     }
 
-    pub fn load_owned_games(&mut self, cx: &mut Context<Program>) {
+    pub fn load_owned_games(&mut self, cx: &mut Context<Self>) {
         if self.steam_client.is_none() {
             return;
         }
@@ -119,14 +131,24 @@ impl Render for Program {
                     .justify_center()
                     .when_else(
                         (self.steam_client.is_some() && !self.owned_games.is_empty()),
-                        |_| {
+                        |this| {
                             div().child(
                                 v_flex()
                                     .children(self.owned_games.iter().map(|id| id.to_string()))
                                     .overflow_y_scrollbar(),
                             )
                         },
-                        |_| div().child("Steam is not found/open or games are still loading"),
+                        |this| {
+                            div()
+                                .child("Steam is not found/open or games are still loading")
+                                .child(
+                                    Button::new("retry")
+                                        .label("Retry")
+                                        .on_mouse_up(gpui::MouseButton::Left, cx.listener(|this, _, _, cx| {
+                                            this.try_initialize(cx);
+                                        }))
+                                )
+                        },
                     ),
             )
     }
