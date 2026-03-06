@@ -14,12 +14,15 @@ use gpui::div;
 use crate::error::AppError;
 use crate::games::get_game_list;
 use crate::interfaces::interface::Interface;
+use crate::interfaces::native::steam_apps001::ISteamApps001;
 use crate::interfaces::native::steam_apps008::ISteamApps008;
+use crate::models;
 use crate::program::Program;
 
 pub struct OwnedGames {
     steam_apps008: Arc<Interface<ISteamApps008>>,
-    owned_games: Vec<i32>,
+    steam_apps001: Arc<Interface<ISteamApps001>>,
+    owned_games: Vec<models::game::Game>,
 
     loading: bool,
     error: Option<AppError>,
@@ -27,8 +30,13 @@ pub struct OwnedGames {
 }
 
 impl OwnedGames {
-    pub fn new(steam_apps008: Arc<Interface<ISteamApps008>>, cx: &mut Context<OwnedGames>) -> Self {
+    pub fn new(
+        steam_apps001: Arc<Interface<ISteamApps001>>,
+        steam_apps008: Arc<Interface<ISteamApps008>>,
+        cx: &mut Context<OwnedGames>,
+    ) -> Self {
         Self {
+            steam_apps001,
             steam_apps008,
             owned_games: vec![],
             loading: false,
@@ -42,16 +50,26 @@ impl OwnedGames {
         cx.notify();
 
         let apps008 = self.steam_apps008.clone();
+        let apps001 = self.steam_apps001.clone();
+
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_executor()
                 .spawn(async move {
                     let owned_games = get_game_list()?
                         .into_iter()
-                        .filter(|id| apps008.is_subscribed_app(*id))
-                        .collect::<Vec<i32>>();
+                        .filter_map(|id| {
+                            apps008.is_subscribed_app(id).then(|| models::game::Game {
+                                id,
+                                name: apps001
+                                    .get_appdata(id, "name")
+                                    .unwrap_or("unknown".to_string()),
+                            })
+                        })
+                        // .filter(|id| apps008.is_subscribed_app(*id))
+                        .collect::<Vec<models::game::Game>>();
 
-                    Ok::<Vec<i32>, AppError>(owned_games)
+                    Ok::<Vec<models::game::Game>, AppError>(owned_games)
                 })
                 .await;
 
@@ -89,7 +107,7 @@ impl Render for OwnedGames {
                     div().v_flex().overflow_y_scrollbar().children(
                         self.owned_games
                             .iter()
-                            .map(|game| div().child(game.to_string())),
+                            .map(|game| div().child(format!("{} - {}", game.id, game.name))),
                     ),
                 ),
             },

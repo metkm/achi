@@ -76,10 +76,12 @@ impl Program {
                         let apps008 = Arc::new(apps008);
 
                         this.steam_client = Some(client);
-                        this.steam_apps001 = Some(apps001);
+                        this.steam_apps001 = Some(apps001.clone());
                         this.steam_apps008 = Some(apps008.clone());
 
-                        this.owned_games = Some(cx.new(|cx| OwnedGames::new(apps008.clone(), cx)));
+                        this.owned_games = Some(
+                            cx.new(|cx| OwnedGames::new(apps001.clone(), apps008.clone(), cx)),
+                        );
 
                         cx.notify();
                     });
