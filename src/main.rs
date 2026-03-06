@@ -1,6 +1,7 @@
 #![allow(dead_code, unused)]
 #![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
 
+mod components;
 mod error;
 mod games;
 mod interfaces;
