@@ -108,7 +108,6 @@ impl Render for OwnedGames {
                             .child(img(game.image_url.clone()).w_full())
                             .child(format!("{} - {}", game.id, game.name))
                     })),
-                
             },
             (true, None, false) => div().child("Loading"),
             (false, Some(error), true) => div().child(error.to_string()),

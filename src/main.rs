@@ -11,7 +11,7 @@ mod models;
 mod program;
 mod steam;
 
-use std::{borrow::Cow, path::PathBuf, sync::Arc};
+use std::{borrow::Cow, path::PathBuf, rc::Rc, sync::Arc};
 
 use gpui::{
     App, AppContext, Application, AssetSource, ParentElement, Render, SharedString, Styled,
@@ -19,7 +19,7 @@ use gpui::{
 };
 
 use gpui_component::{
-    Root, StyledExt, Theme, ThemeMode, ThemeRegistry, TitleBar,
+    Root, StyledExt, Theme, ThemeConfig, ThemeMode, ThemeRegistry, ThemeSet, TitleBar,
     button::{Button, ButtonVariants},
 };
 
@@ -28,15 +28,28 @@ use gpui_component_assets::Assets;
 use crate::{program::Program, steam::Steam};
 
 pub fn init(cx: &mut App) {
-    ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
-        let theme = ThemeRegistry::global(cx)
-            .themes()
-            .get("Catppuccin Mocha")
-            .cloned()
-            .unwrap();
+    const CATPPUCCIN_MOCHA: &[u8] = include_bytes!("../assets/themes/catppuccin.json");
 
-        Theme::global_mut(cx).apply_config(&theme);
-    });
+    let theme_str = std::str::from_utf8(CATPPUCCIN_MOCHA).unwrap();
+    let theme_set: ThemeSet = serde_json::from_str(theme_str).unwrap();
+
+    if let Some(theme_config) = theme_set
+        .themes
+        .iter()
+        .find(|them| them.name == "Catppuccin Mocha")
+    {
+        Theme::global_mut(cx).apply_config(&Rc::new(theme_config.clone()));
+    }
+
+    // ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
+    //     let theme = ThemeRegistry::global(cx)
+    //         .themes()
+    //         .get("Catppuccin Mocha")
+    //         .cloned()
+    //         .unwrap();
+
+    //     Theme::global_mut(cx).apply_config(&theme);
+    // });
 }
 
 fn main() {

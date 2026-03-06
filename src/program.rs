@@ -137,10 +137,9 @@ impl Render for Program {
                     .flex_grow()
                     .overflow_scroll()
                     .p_4()
-                    .child(content)
-                    // .child(
-                    //     img("https://pub.lbkrs.com/files/202503/vEnnmgUM6bo362ya/sdk.svg").h_24(),
-                    // ), // .child(content),
+                    .child(content), // .child(
+                                     //     img("https://pub.lbkrs.com/files/202503/vEnnmgUM6bo362ya/sdk.svg").h_24(),
+                                     // ), // .child(content),
             )
     }
 }
