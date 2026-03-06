@@ -3,22 +3,20 @@ use std::sync::Arc;
 use crate::components::owned_games::OwnedGames;
 
 use crate::error::AppError;
-use crate::games::get_game_list;
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_apps001::ISteamApps001;
-use crate::interfaces::native::steam_apps008::{self, ISteamApps008};
-use crate::interfaces::native::steam_client::ISteamClient018;
 use crate::steam::Steam;
 
-use gpui::prelude::FluentBuilder;
-use gpui::{
-    AbsoluteLength, AppContext, AsyncApp, Context, Entity, InteractiveElement, ParentElement,
-    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, img, px, rgb, rgba,
+use crate::interfaces::interface::Interface;
+use crate::interfaces::native::{
+    steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
 };
 
-use gpui_component::button::{Button, ButtonVariants};
-use gpui_component::scroll::{ScrollableElement, ScrollbarAxis, ScrollbarShow};
-use gpui_component::{ActiveTheme, StyledExt, TitleBar, v_flex};
+use gpui::{
+    AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
+    StatefulInteractiveElement, Styled, div, rgba,
+};
+
+use gpui_component::button::Button;
+use gpui_component::{StyledExt, TitleBar};
 
 use log::error;
 
@@ -84,7 +82,8 @@ impl Program {
                         );
 
                         cx.notify();
-                    });
+                    })
+                    .ok();
                 }
                 // we can show these errors in ui later.
                 Err(error) => {
@@ -99,7 +98,7 @@ impl Program {
 impl Render for Program {
     fn render(
         &mut self,
-        window: &mut gpui::Window,
+        _: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
         let content = match self.steam_client {

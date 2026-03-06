@@ -1,8 +1,7 @@
-use std::os::raw::c_int;
-use std::sync::atomic::Ordering::SeqCst;
-
 use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_user::{ISteamUser012, ISteamUser012Functions};
+use crate::interfaces::native::steam_user::ISteamUser012;
+
+use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamUser012> {
     pub fn get_steam_id(&self) -> u64 {

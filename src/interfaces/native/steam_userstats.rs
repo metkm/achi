@@ -1,6 +1,6 @@
-use std::ffi::{c_char, c_int};
-
 use crate::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
+
+use std::ffi::{c_char, c_int};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]

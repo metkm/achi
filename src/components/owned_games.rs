@@ -1,18 +1,12 @@
-use gpui_component::StyledExt;
-use gpui_component::scroll::ScrollableElement;
-
-use log::error;
-use std::sync::Arc;
-
-use gpui::{Context, IntoElement, ParentElement, Render, RenderOnce, Styled, div, img, px, rgb};
-
 use crate::error::AppError;
 use crate::games::get_game_list;
 use crate::interfaces::interface::Interface;
 use crate::interfaces::native::steam_apps001::ISteamApps001;
 use crate::interfaces::native::steam_apps008::ISteamApps008;
 use crate::models;
-use crate::program::Program;
+
+use gpui::{Context, ParentElement, Render, Styled, div, img};
+use std::sync::Arc;
 
 pub struct OwnedGames {
     steam_apps008: Arc<Interface<ISteamApps008>>,
@@ -28,7 +22,7 @@ impl OwnedGames {
     pub fn new(
         steam_apps001: Arc<Interface<ISteamApps001>>,
         steam_apps008: Arc<Interface<ISteamApps008>>,
-        cx: &mut Context<OwnedGames>,
+        _cx: &mut Context<OwnedGames>,
     ) -> Self {
         Self {
             steam_apps001,
@@ -93,7 +87,7 @@ impl OwnedGames {
 impl Render for OwnedGames {
     fn render(
         &mut self,
-        window: &mut gpui::Window,
+        _: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
         match (self.loading, &self.error, self.fetched) {

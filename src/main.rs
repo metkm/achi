@@ -1,5 +1,5 @@
-#![allow(dead_code, unused)]
-#![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
+// #![allow(dead_code, unused)]
+// #![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
 
 mod components;
 mod error;
@@ -11,21 +11,14 @@ mod models;
 mod program;
 mod steam;
 
-use std::{borrow::Cow, path::PathBuf, rc::Rc, sync::Arc};
+use std::{borrow::Cow, sync::Arc};
 
-use gpui::{
-    App, AppContext, Application, AssetSource, ParentElement, Render, SharedString, Styled,
-    WindowOptions, div, px,
-};
+use gpui::{App, AppContext, Application, WindowOptions, px};
 
-use gpui_component::{
-    Root, StyledExt, Theme, ThemeConfig, ThemeMode, ThemeRegistry, ThemeSet, TitleBar,
-    button::{Button, ButtonVariants},
-};
-
+use gpui_component::{Root, ThemeSet};
 use gpui_component_assets::Assets;
 
-use crate::{program::Program, steam::Steam};
+use crate::program::Program;
 
 pub fn init(cx: &mut App) {
     const CATPPUCCIN_MOCHA: &[u8] = include_bytes!("../assets/themes/catppuccin.json");

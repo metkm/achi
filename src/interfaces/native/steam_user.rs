@@ -1,6 +1,6 @@
-use std::os::raw::c_int;
-
 use crate::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
+
+use std::os::raw::c_int;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]

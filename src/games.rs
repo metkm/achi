@@ -1,7 +1,7 @@
+use crate::error::AppError;
+
 use log::info;
 use serde::{Deserialize, Serialize};
-
-use crate::error::AppError;
 
 #[derive(Serialize, Deserialize)]
 struct Document {

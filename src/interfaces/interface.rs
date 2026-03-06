@@ -1,9 +1,4 @@
-use std::{
-    ffi::c_int,
-    sync::{Arc, atomic::AtomicPtr},
-};
-
-use crate::interfaces::native::steam_user::{ISteamUser012, ISteamUser012Functions};
+use std::{ffi::c_int, sync::atomic::AtomicPtr};
 
 pub trait VTable {
     type Functions: Copy;

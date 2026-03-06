@@ -1,8 +1,7 @@
 use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_userstats::{ISteamUserStats013, ISteamUserStats013Functions};
+use crate::interfaces::native::steam_userstats::ISteamUserStats013;
 
 use std::ffi::c_char;
-use std::os::raw::c_int;
 use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamUserStats013> {

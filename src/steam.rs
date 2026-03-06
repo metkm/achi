@@ -11,6 +11,7 @@ use windows::{
     },
     core::{PCSTR, PCWSTR},
 };
+
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 use crate::{

@@ -1,10 +1,10 @@
 use crate::error::AppError;
+
 use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_apps001::ISteamApps001;
-use crate::interfaces::native::steam_apps008::ISteamApps008;
-use crate::interfaces::native::steam_client::{ISteamClient018, ISteamClient018Functions};
-use crate::interfaces::native::steam_user::ISteamUser012;
-use crate::interfaces::native::steam_userstats::ISteamUserStats013;
+use crate::interfaces::native::{
+    steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
+    steam_user::ISteamUser012, steam_userstats::ISteamUserStats013,
+};
 
 use std::ffi::{CString, c_int};
 use std::sync::atomic::Ordering::SeqCst;
