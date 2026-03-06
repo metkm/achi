@@ -39,31 +39,6 @@ pub fn init(cx: &mut App) {
 
         Theme::global_mut(cx).apply_config(&theme);
     });
-
-    // Theme::change(ThemeMode::Light, None, cx);
-
-    // let theme_name = SharedString::from("Ayu Light");
-
-    // let theme_registry = ThemeRegistry::global_mut(cx);
-
-    // if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
-    //     Theme::global_mut(cx).apply_config(&theme);
-    // }
-
-    // ThemeRegistry::global_mut(cx).apply_config;
-
-    // Load and watch themes from ./themes directory
-    // if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), cx, move |cx| {
-    //     if let Some(theme) = ThemeRegistry::global(cx)
-    //         .themes()
-    //         .get(&theme_name)
-    //         .cloned()
-    //     {
-    //         Theme::global_mut(cx).apply_config(&theme);
-    //     }
-    // }) {
-    //     tracing::error!("Failed to watch themes directory: {}", err);
-    // }
 }
 
 fn main() {

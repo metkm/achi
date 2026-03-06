@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::components::owned_games::OwnedGames;
 
 use crate::error::AppError;
@@ -10,28 +12,30 @@ use crate::steam::Steam;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AppContext, AsyncApp, Context, InteractiveElement, ParentElement, Render, Styled, WeakEntity,
-    div,
+    AbsoluteLength, AppContext, AsyncApp, Context, Entity, InteractiveElement, ParentElement,
+    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, px,
 };
 
 use gpui_component::button::{Button, ButtonVariants};
-use gpui_component::scroll::{ScrollableElement, ScrollbarAxis};
+use gpui_component::scroll::{ScrollableElement, ScrollbarAxis, ScrollbarShow};
 use gpui_component::{StyledExt, TitleBar, v_flex};
 
 use log::error;
 
-#[derive(Default)]
 pub struct Program {
-    steam_client: Option<Interface<ISteamClient018>>,
-    steam_apps001: Option<Interface<ISteamApps001>>,
-    steam_apps008: Option<Interface<ISteamApps008>>,
-    owned_games: Vec<i32>,
+    steam_client: Option<Arc<Interface<ISteamClient018>>>,
+    steam_apps001: Option<Arc<Interface<ISteamApps001>>>,
+    steam_apps008: Option<Arc<Interface<ISteamApps008>>>,
+    owned_games: Option<Entity<OwnedGames>>,
 }
 
 impl Program {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let prog = Self {
-            ..Default::default()
+            steam_client: None,
+            steam_apps001: None,
+            steam_apps008: None,
+            owned_games: None,
         };
 
         prog.try_initialize(cx);
@@ -67,49 +71,22 @@ impl Program {
             match result {
                 Ok((client, apps001, apps008)) => {
                     this.update(cx, |this, cx| {
+                        let client = Arc::new(client);
+                        let apps001 = Arc::new(apps001);
+                        let apps008 = Arc::new(apps008);
+
                         this.steam_client = Some(client);
                         this.steam_apps001 = Some(apps001);
-                        this.steam_apps008 = Some(apps008);
+                        this.steam_apps008 = Some(apps008.clone());
+
+                        this.owned_games = Some(cx.new(|cx| OwnedGames::new(apps008.clone(), cx)));
 
                         cx.notify();
-                        // this.load_owned_games(cx);
                     });
                 }
                 // we can show these errors in ui later.
                 Err(error) => {
-                    error!("{}", error);
-                }
-            }
-        })
-        .detach();
-    }
-
-    pub fn load_owned_games(&mut self, cx: &mut Context<Self>) {
-        if self.steam_client.is_none() {
-            return;
-        }
-
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_executor()
-                .spawn(async move {
-                    let all_games = get_game_list();
-
-                    all_games
-                })
-                .await;
-
-            match result {
-                Ok(mut games) => {
-                    this.update(cx, |this, cx| {
-                        this.owned_games.clear();
-                        this.owned_games.extend_from_slice(&games[0..20]);
-                        // this.games.append((&mut games)[0..20]);
-                        cx.notify();
-                    });
-                }
-                Err(err) => {
-                    error!("error getting game list {:?}", err);
+                    error!("{error}");
                 }
             }
         })
@@ -123,29 +100,41 @@ impl Render for Program {
         window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        let content = if self.steam_client.is_none() {
-            div()
+        let content = match self.steam_client {
+            None => div()
+                .v_flex()
+                .flex_grow()
+                .justify_center()
+                .items_center()
                 .child("failed to initialize steam. Is it open?")
                 .child(Button::new("Retry").label("Retry").on_click(cx.listener(
                     |this, _, _, cx| {
                         this.try_initialize(cx);
                     },
-                )))
-        } else {
-            div().child(cx.new(|cx| OwnedGames::new()))
+                ))),
+            Some(_) => {
+                if let Some(owned_games) = &self.owned_games {
+                    div().v_flex().flex_grow().child(owned_games.clone())
+                } else {
+                    div().child("owned games component in none for some reason")
+                }
+            }
         };
 
         div()
             .v_flex()
             .size_full()
+            .max_h_full()
+            .max_w_full()
+            .overflow_hidden()
             .font_family("Inter 18pt 18pt")
             .child(TitleBar::new())
             .child(
                 div()
-                    .v_flex()
+                    .id("scrollable-content")
                     .flex_grow()
-                    .items_center()
-                    .justify_center()
+                    .overflow_scroll()
+                    .p_4()
                     .child(content),
             )
     }
