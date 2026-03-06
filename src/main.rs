@@ -33,13 +33,13 @@ pub fn init(cx: &mut App) {
     let theme_str = std::str::from_utf8(CATPPUCCIN_MOCHA).unwrap();
     let theme_set: ThemeSet = serde_json::from_str(theme_str).unwrap();
 
-    if let Some(theme_config) = theme_set
-        .themes
-        .iter()
-        .find(|them| them.name == "Catppuccin Mocha")
-    {
-        Theme::global_mut(cx).apply_config(&Rc::new(theme_config.clone()));
-    }
+    // if let Some(theme_config) = theme_set
+    //     .themes
+    //     .iter()
+    //     .find(|them| them.name == "Catppuccin Mocha")
+    // {
+    //     Theme::global_mut(cx).apply_config(&Rc::new(theme_config.clone()));
+    // }
 
     // ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
     //     let theme = ThemeRegistry::global(cx)

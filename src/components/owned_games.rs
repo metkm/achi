@@ -101,11 +101,15 @@ impl Render for OwnedGames {
                 true => div().child("Owned games are empty"),
                 false => div()
                     .grid()
-                    .grid_cols(4)
+                    .grid_cols(6)
                     .gap_4()
                     .children(self.owned_games.iter().map(|game| {
+                        let mut img = img(game.image_url.clone());
+
+                        img.style().aspect_ratio = Some(231.0 / 87.0);
+
                         div()
-                            .child(img(game.image_url.clone()).w_full())
+                            .child(img.w_full())
                             .child(format!("{} - {}", game.id, game.name))
                     })),
             },

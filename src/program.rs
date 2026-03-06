@@ -13,12 +13,12 @@ use crate::steam::Steam;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AbsoluteLength, AppContext, AsyncApp, Context, Entity, InteractiveElement, ParentElement,
-    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, img, px, rgb,
+    Pixels, Render, StatefulInteractiveElement, Styled, WeakEntity, div, img, px, rgb, rgba,
 };
 
 use gpui_component::button::{Button, ButtonVariants};
 use gpui_component::scroll::{ScrollableElement, ScrollbarAxis, ScrollbarShow};
-use gpui_component::{StyledExt, TitleBar, v_flex};
+use gpui_component::{ActiveTheme, StyledExt, TitleBar, v_flex};
 
 use log::error;
 
@@ -130,7 +130,7 @@ impl Render for Program {
             .max_w_full()
             .overflow_hidden()
             .font_family("Inter 18pt 18pt")
-            .child(TitleBar::new())
+            .child(TitleBar::new().bg(rgba(0x00000000)).border_0())
             .child(
                 div()
                     .id("scrollable-content")
