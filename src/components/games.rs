@@ -21,6 +21,16 @@ use gpui_component::{
     spinner::Spinner,
 };
 
+pub struct SelectedGameState {
+    pub game_id: Option<i32>,
+}
+
+impl SelectedGameState {
+    pub fn new() -> Self {
+        Self { game_id: None }
+    }
+}
+
 pub struct OwnedGames {
     steam_apps008: Arc<Interface<ISteamApps008>>,
     steam_apps001: Arc<Interface<ISteamApps001>>,
@@ -28,6 +38,7 @@ pub struct OwnedGames {
     owned_games: Arc<Vec<models::game::Game>>,
     filtered_games: Arc<Vec<models::game::Game>>,
 
+    selected_game_state: Entity<SelectedGameState>,
     loading: bool,
     error: Option<AppError>,
     fetched: bool,
@@ -40,6 +51,7 @@ impl OwnedGames {
         cx: &mut Context<OwnedGames>,
         steam_apps001: Arc<Interface<ISteamApps001>>,
         steam_apps008: Arc<Interface<ISteamApps008>>,
+        selected_game_state: &Entity<SelectedGameState>,
     ) -> Self {
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search.."));
 
@@ -52,6 +64,7 @@ impl OwnedGames {
             owned_games: Arc::new(vec![]),
             filtered_games: Arc::new(vec![]),
 
+            selected_game_state: selected_game_state.clone(),
             loading: false,
             error: None,
             fetched: false,
@@ -170,10 +183,7 @@ impl Render for OwnedGames {
                 false => div()
                     .v_flex()
                     .gap_2()
-                    .child(
-                        Input::new(&self.input)
-                            .w_96()
-                    )
+                    .child(Input::new(&self.input).w_96())
                     .child(div().grid().grid_cols(col_count).gap_2().children({
                         let items = if self.input.read(cx).value().is_empty() {
                             &self.owned_games
@@ -185,18 +195,29 @@ impl Render for OwnedGames {
                             let mut img = img(game.image_url.clone());
 
                             img.style().aspect_ratio = Some(231.0 / 87.0);
+                            let game_id = game.id.clone();
 
                             div()
                                 .w_full()
                                 .rounded_md()
                                 .hover(|this| this.bg(cx.theme().muted))
+                                .on_mouse_down_out(cx.listener(move |this, _, _, cx| {
+                                    this.selected_game_state.update(cx, move |this, cx| {
+                                        this.game_id = Some(game_id);
+                                        cx.notify();
+                                    });
+                                }))
                                 .child(
                                     img.w_full()
                                         .h_auto()
                                         .object_fit(gpui::ObjectFit::Fill)
                                         .rounded_md(),
                                 )
-                                .child(Label::new(format!("{} - {}", game.id, game.name)).pl_1().text_sm())
+                                .child(
+                                    Label::new(format!("{} - {}", game.id, game.name))
+                                        .pl_1()
+                                        .text_sm(),
+                                )
                         })
                     })),
             },

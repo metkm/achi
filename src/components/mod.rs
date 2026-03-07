@@ -1,1 +1,2 @@
-pub mod owned_games;
+pub mod achievements;
+pub mod games;

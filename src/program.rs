@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::components::owned_games::OwnedGames;
+use crate::components::games::{OwnedGames, SelectedGameState};
 
 use crate::error::AppError;
 use crate::steam::Steam;
@@ -26,6 +26,7 @@ pub struct Program {
     steam_apps001: Option<Arc<Interface<ISteamApps001>>>,
     steam_apps008: Option<Arc<Interface<ISteamApps008>>>,
     owned_games: Option<Entity<OwnedGames>>,
+    selected_game_state: Entity<SelectedGameState>,
 }
 
 impl Program {
@@ -35,6 +36,7 @@ impl Program {
             steam_apps001: None,
             steam_apps008: None,
             owned_games: None,
+            selected_game_state: cx.new(|_| SelectedGameState::new()),
         };
 
         prog.try_initialize(window, cx);
@@ -83,7 +85,13 @@ impl Program {
                         window_handle
                             .update(cx, |_, window, cx| {
                                 this.owned_games = Some(cx.new(|cx| {
-                                    OwnedGames::new(window, cx, apps001.clone(), apps008.clone())
+                                    OwnedGames::new(
+                                        window,
+                                        cx,
+                                        apps001.clone(),
+                                        apps008.clone(),
+                                        &this.selected_game_state,
+                                    )
                                 }));
                             })
                             .ok();
@@ -120,13 +128,13 @@ impl Render for Program {
                         this.try_initialize(window, cx);
                     },
                 ))),
-            Some(_) => {
-                if let Some(owned_games) = &self.owned_games {
-                    div().v_flex().flex_grow().child(owned_games.clone())
-                } else {
-                    div().child("owned games component in none for some reason")
-                }
-            }
+            Some(_) => match self.selected_game_state.read(cx).game_id {
+                Some(game_id) => div().v_flex().flex_grow().child(game_id.to_string()),
+                None => div()
+                    .v_flex()
+                    .flex_grow()
+                    .child((self.owned_games.as_ref().unwrap()).clone()),
+            },
         };
 
         div()
@@ -137,15 +145,13 @@ impl Render for Program {
             .overflow_hidden()
             .font_family("Inter 18pt 18pt")
             .child(
-                TitleBar::new()
-                    .bg(rgba(0x00000000))
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap_2()
-                            .child(Label::new("Achi").text_sm()), 
-                    ),
+                TitleBar::new().bg(rgba(0x00000000)).child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(Label::new("Achi").text_sm()),
+                ),
             )
             .child(
                 div()
