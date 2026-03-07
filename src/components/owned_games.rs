@@ -10,11 +10,12 @@ use crate::{error::AppError, models::game::Game};
 use std::sync::Arc;
 
 use gpui::{
-    AppContext, Context, Entity, ParentElement, Render, Styled, StyledImage, Window, div, img,
+    AppContext, Context, Entity, InteractiveElement, ParentElement, Render, Styled, StyledImage,
+    Window, div, img,
 };
 
 use gpui_component::{
-    IconName, PixelsExt, Sizable, StyledExt,
+    ActiveTheme, IconName, PixelsExt, Sizable, StyledExt,
     input::{Input, InputEvent, InputState},
     label::Label,
     spinner::Spinner,
@@ -167,7 +168,7 @@ impl Render for OwnedGames {
             (false, None, true) => match self.owned_games.is_empty() {
                 true => div().child("No games found!"),
                 false => div().v_flex().gap_2().child(Input::new(&self.input)).child(
-                    div().grid().grid_cols(col_count).gap_2().children({
+                    div().grid().grid_cols(col_count).children({
                         let items = if self.input.read(cx).value().is_empty() {
                             &self.owned_games
                         } else {
@@ -181,6 +182,9 @@ impl Render for OwnedGames {
 
                             div()
                                 .w_full()
+                                .p_2()
+                                .rounded_md()
+                                .hover(|this| this.bg(cx.theme().muted))
                                 .child(
                                     img.w_full()
                                         .h_auto()

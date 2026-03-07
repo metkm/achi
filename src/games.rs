@@ -18,7 +18,7 @@ pub fn get_game_list() -> Result<Vec<i32>, AppError> {
     if let Ok(content) = fs::read_to_string(cache_path) {
         info!("Loading game list from cache");
         if let Ok(document) = serde_xml_rs::from_str::<Document>(&content) {
-            return Ok(document.games)
+            return Ok(document.games);
         } else {
             error!("Cache is found but unable to parse")
         }
@@ -35,7 +35,7 @@ pub fn get_game_list() -> Result<Vec<i32>, AppError> {
     } else {
         info!("Cache updated");
     }
-    
+
     let document = serde_xml_rs::from_str::<Document>(&response)?;
     Ok(document.games)
 }
