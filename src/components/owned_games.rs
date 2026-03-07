@@ -6,7 +6,7 @@ use crate::interfaces::native::steam_apps008::ISteamApps008;
 use crate::models;
 
 use gpui::{Context, ParentElement, Render, Styled, div, img};
-use gpui_component::{StyledExt, label::Label};
+use gpui_component::{IconName, Sizable, StyledExt, label::Label, spinner::Spinner};
 use std::sync::Arc;
 
 pub struct OwnedGames {
@@ -118,7 +118,14 @@ impl Render for OwnedGames {
 
                 div()
                     .m_auto()
-                    .child("loading")
+                    .flex()
+                    .gap_2()
+                    .child(
+                        Spinner::new()
+                        .icon(IconName::LoaderCircle)
+                        .large()
+                    )
+                    .child("Loading")
             }
             _ => div(),
         }
