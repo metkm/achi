@@ -1,37 +1,95 @@
-use crate::error::AppError;
-use crate::games::get_game_list;
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_apps001::ISteamApps001;
-use crate::interfaces::native::steam_apps008::ISteamApps008;
-use crate::models;
+use crate::interfaces::{
+    interface::Interface,
+    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
+};
 
-use gpui::{Context, ParentElement, Render, Styled, div, img};
-use gpui_component::{IconName, Sizable, StyledExt, label::Label, spinner::Spinner};
+use crate::games::get_game_list;
+use crate::models;
+use crate::{error::AppError, models::game::Game};
+
 use std::sync::Arc;
+
+use gpui::{AppContext, Context, Entity, ParentElement, Render, Styled, Window, div, img};
+
+use gpui_component::{
+    IconName, Sizable, StyledExt,
+    input::{Input, InputEvent, InputState},
+    label::Label,
+    spinner::Spinner,
+};
 
 pub struct OwnedGames {
     steam_apps008: Arc<Interface<ISteamApps008>>,
     steam_apps001: Arc<Interface<ISteamApps001>>,
-    owned_games: Vec<models::game::Game>,
+
+    owned_games: Arc<Vec<models::game::Game>>,
+    filtered_games: Arc<Vec<models::game::Game>>,
 
     loading: bool,
     error: Option<AppError>,
     fetched: bool,
+    input: Entity<InputState>,
 }
 
 impl OwnedGames {
     pub fn new(
+        window: &mut Window,
+        cx: &mut Context<OwnedGames>,
         steam_apps001: Arc<Interface<ISteamApps001>>,
         steam_apps008: Arc<Interface<ISteamApps008>>,
-        _cx: &mut Context<OwnedGames>,
     ) -> Self {
+        let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search.."));
+
+        cx.subscribe_in(&input, window, Self::on_search_input)
+            .detach();
+
         Self {
             steam_apps001,
             steam_apps008,
-            owned_games: vec![],
+            owned_games: Arc::new(vec![]),
+            filtered_games: Arc::new(vec![]),
+
             loading: false,
             error: None,
             fetched: false,
+            input,
+        }
+    }
+
+    fn on_search_input(
+        this: &mut OwnedGames,
+        state: &Entity<InputState>,
+        event: &InputEvent,
+        _: &mut Window,
+        cx: &mut Context<OwnedGames>,
+    ) {
+        match event {
+            InputEvent::Change => {
+                let query = state.read(cx).value();
+                let owned_games = this.owned_games.clone();
+
+                cx.spawn(async move |this, cx| {
+                    let filtered_games = cx
+                        .background_executor()
+                        .spawn(async move {
+                            owned_games
+                                .iter()
+                                .cloned()
+                                .filter(|g| g.name.to_lowercase().contains(&query.to_lowercase()))
+                                .collect::<Vec<Game>>()
+                        })
+                        .await;
+
+                    this.update(cx, |this, cx| {
+                        this.filtered_games = Arc::new(filtered_games);
+
+                        cx.notify();
+                    })
+                    .ok();
+                })
+                .detach();
+            }
+            _ => {}
         }
     }
 
@@ -70,7 +128,7 @@ impl OwnedGames {
 
                 match result {
                     Ok(games) => {
-                        this.owned_games = games;
+                        this.owned_games = Arc::new(games);
                     }
                     Err(error) => {
                         this.error = Some(error);
@@ -93,22 +151,28 @@ impl Render for OwnedGames {
     ) -> impl gpui::IntoElement {
         match (self.loading, &self.error, self.fetched) {
             (false, None, true) => match self.owned_games.is_empty() {
-                true => div().child("Owned games are empty"),
-                false => div()
-                    .grid()
-                    .grid_cols(6)
-                    .gap_2()
-                    .children(self.owned_games.iter().map(|game| {
-                        let mut img = img(game.image_url.clone());
+                true => div().child("No games found!"),
+                false => div().v_flex().gap_2().child(Input::new(&self.input)).child(
+                    div().grid().grid_cols(6).gap_2().children({
+                        let items = if self.input.read(cx).value().is_empty() {
+                            &self.owned_games
+                        } else {
+                            &self.filtered_games
+                        };
 
-                        img.style().aspect_ratio = Some(231.0 / 87.0);
+                        items.iter().map(|game| {
+                            let mut img = img(game.image_url.clone());
 
-                        div()
-                            .v_flex()
-                            .gap_2()
-                            .child(img.w_full().rounded_md())
-                            .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
-                    })),
+                            img.style().aspect_ratio = Some(231.0 / 87.0);
+
+                            div()
+                                .v_flex()
+                                .gap_2()
+                                .child(img.w_full().rounded_md())
+                                .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
+                        })
+                    }),
+                ),
             },
             (false, Some(error), true) => div().child(error.to_string()),
             (_, None, false) => {
@@ -120,11 +184,7 @@ impl Render for OwnedGames {
                     .m_auto()
                     .flex()
                     .gap_2()
-                    .child(
-                        Spinner::new()
-                        .icon(IconName::LoaderCircle)
-                        .large()
-                    )
+                    .child(Spinner::new().icon(IconName::LoaderCircle).large())
                     .child("Loading")
             }
             _ => div(),

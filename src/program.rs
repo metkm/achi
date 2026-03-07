@@ -11,7 +11,8 @@ use crate::interfaces::native::{
 };
 
 use gpui::{
-    AppContext, Context, Entity, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled, div, rgb, rgba
+    AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
+    StatefulInteractiveElement, Styled, Window, div, rgba,
 };
 
 use gpui_component::button::Button;
@@ -27,7 +28,7 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn new(cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let prog = Self {
             steam_client: None,
             steam_apps001: None,
@@ -35,12 +36,14 @@ impl Program {
             owned_games: None,
         };
 
-        prog.try_initialize(cx);
+        prog.try_initialize(window, cx);
 
         prog
     }
 
-    fn try_initialize(&self, cx: &mut Context<Self>) {
+    fn try_initialize(&self, window: &mut Window, cx: &mut Context<Self>) {
+        let window_handle = window.window_handle();
+
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_executor()
@@ -76,9 +79,13 @@ impl Program {
                         this.steam_apps001 = Some(apps001.clone());
                         this.steam_apps008 = Some(apps008.clone());
 
-                        this.owned_games = Some(
-                            cx.new(|cx| OwnedGames::new(apps001.clone(), apps008.clone(), cx)),
-                        );
+                        window_handle
+                            .update(cx, |_, window, cx| {
+                                this.owned_games = Some(cx.new(|cx| {
+                                    OwnedGames::new(window, cx, apps001.clone(), apps008.clone())
+                                }));
+                            })
+                            .ok();
 
                         cx.notify();
                     })
@@ -108,16 +115,13 @@ impl Render for Program {
                 .items_center()
                 .child("Failed to initialize steam. Is it open?")
                 .child(Button::new("Retry").label("Retry").on_click(cx.listener(
-                    |this, _, _, cx| {
-                        this.try_initialize(cx);
+                    |this, _, window, cx| {
+                        this.try_initialize(window, cx);
                     },
                 ))),
             Some(_) => {
                 if let Some(owned_games) = &self.owned_games {
-                    div()
-                        .v_flex()
-                        .flex_grow()
-                        .child(owned_games.clone())
+                    div().v_flex().flex_grow().child(owned_games.clone())
                 } else {
                     div().child("owned games component in none for some reason")
                 }

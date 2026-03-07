@@ -75,7 +75,7 @@ fn main() {
 
         cx.spawn(async move |cx| {
             cx.open_window(window_options, |window, cx| {
-                let view = cx.new(|context| Program::new(context));
+                let view = cx.new(|context| Program::new(window, context));
 
                 cx.new(|cx| Root::new(view, window, cx))
             })?;
