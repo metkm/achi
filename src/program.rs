@@ -142,7 +142,7 @@ impl Render for Program {
                     .v_flex()
                     .flex_grow()
                     .overflow_scroll()
-                    .p_4()
+                    .p_2()
                     .child(content),
             )
     }

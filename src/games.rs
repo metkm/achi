@@ -1,8 +1,8 @@
-use std::io::{Read, Write};
+use std::fs;
 
 use crate::error::AppError;
 
-use log::{error, info};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -12,47 +12,30 @@ struct Document {
 }
 
 pub fn get_game_list() -> Result<Vec<i32>, AppError> {
-    let file_content = match std::fs::File::open("game_list.txt") {
-        Ok(mut file) => {
-            let mut content = String::new();
+    let cache_path = "game_list.txt";
+    let url = "https://gib.me/sam/games.xml";
 
-            if let Err(error) = file.read_to_string(&mut content) {
-                error!(
-                    "game_list.txt cache is found but there was an error reading contents: {error}"
-                );
-                None
-            } else {
-                Some(content)
-            }
+    if let Ok(content) = fs::read_to_string(cache_path) {
+        info!("Loading game list from cache");
+        if let Ok(document) = serde_xml_rs::from_str::<Document>(&content) {
+            return Ok(document.games)
+        } else {
+            error!("Cache is found but unable to parse")
         }
-        Err(_) => {
-            info!("game_list.txt cache is not found");
-            None
-        }
-    };
+    } else {
+        warn!("Cache not found");
+    }
 
-    let parsed: Document = match file_content {
-        Some(file_content) => serde_xml_rs::from_str(&file_content)?,
-        None => {
-            info!("getting list of games from https://gib.me/sam/games.xml");
-            let response = reqwest::blocking::get("https://gib.me/sam/games.xml")?.text()?;
+    info!("getting list of games from https://gib.me/sam/games.xml");
 
-            match std::fs::File::create("game_list.txt") {
-                Ok(mut file) => {
-                    info!("writing game list cache to game_list.txt");
+    let response = reqwest::blocking::get(url)?.text()?;
 
-                    if let Err(error) = file.write(&response.as_bytes()) {
-                        error!("error writing cache to file game_list.txt {error}");
-                    };
-                }
-                Err(error) => {
-                    error!("error creating cache file game_list.txt {error}");
-                }
-            };
-
-            serde_xml_rs::from_str(&response)?
-        }
-    };
-
-    Ok(parsed.games)
+    if let Err(e) = fs::write(cache_path, &response) {
+        error!("Failed to write cache: {e}");
+    } else {
+        info!("Cache updated");
+    }
+    
+    let document = serde_xml_rs::from_str::<Document>(&response)?;
+    Ok(document.games)
 }
