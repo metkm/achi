@@ -11,8 +11,7 @@ use crate::interfaces::native::{
 };
 
 use gpui::{
-    AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
-    StatefulInteractiveElement, Styled, div, rgba,
+    AppContext, Context, Entity, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled, div, rgb, rgba
 };
 
 use gpui_component::button::Button;
@@ -104,10 +103,10 @@ impl Render for Program {
         let content = match self.steam_client {
             None => div()
                 .v_flex()
-                .flex_grow()
+                .size_full()
                 .justify_center()
                 .items_center()
-                .child("failed to initialize steam. Is it open?")
+                .child("Failed to initialize steam. Is it open?")
                 .child(Button::new("Retry").label("Retry").on_click(cx.listener(
                     |this, _, _, cx| {
                         this.try_initialize(cx);
@@ -115,7 +114,10 @@ impl Render for Program {
                 ))),
             Some(_) => {
                 if let Some(owned_games) = &self.owned_games {
-                    div().flex().flex_grow().child(owned_games.clone())
+                    div()
+                        .v_flex()
+                        .flex_grow()
+                        .child(owned_games.clone())
                 } else {
                     div().child("owned games component in none for some reason")
                 }
@@ -133,12 +135,11 @@ impl Render for Program {
             .child(
                 div()
                     .id("scrollable-content")
+                    .v_flex()
                     .flex_grow()
                     .overflow_scroll()
                     .p_4()
-                    .child(content), // .child(
-                                     //     img("https://pub.lbkrs.com/files/202503/vEnnmgUM6bo362ya/sdk.svg").h_24(),
-                                     // ), // .child(content),
+                    .child(content),
             )
     }
 }

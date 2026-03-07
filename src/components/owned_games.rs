@@ -6,6 +6,7 @@ use crate::interfaces::native::steam_apps008::ISteamApps008;
 use crate::models;
 
 use gpui::{Context, ParentElement, Render, Styled, div, img};
+use gpui_component::{StyledExt, label::Label};
 use std::sync::Arc;
 
 pub struct OwnedGames {
@@ -96,22 +97,28 @@ impl Render for OwnedGames {
                 false => div()
                     .grid()
                     .grid_cols(6)
-                    .gap_4()
+                    .gap_2()
                     .children(self.owned_games.iter().map(|game| {
                         let mut img = img(game.image_url.clone());
 
                         img.style().aspect_ratio = Some(231.0 / 87.0);
 
                         div()
-                            .child(img.w_full())
-                            .child(format!("{} - {}", game.id, game.name))
+                            .v_flex()
+                            .gap_2()
+                            .child(img.w_full().rounded_md())
+                            .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
                     })),
             },
-            (true, None, false) => div().child("Loading"),
             (false, Some(error), true) => div().child(error.to_string()),
-            (false, None, false) => {
-                self.fetch_games(cx);
+            (_, None, false) => {
+                if !self.loading {
+                    self.fetch_games(cx);
+                }
+
                 div()
+                    .m_auto()
+                    .child("loading")
             }
             _ => div(),
         }
