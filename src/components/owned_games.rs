@@ -9,10 +9,15 @@ use crate::{error::AppError, models::game::Game};
 
 use std::sync::Arc;
 
-use gpui::{AppContext, Context, Entity, ParentElement, Render, Styled, StyledImage, Window, div, img};
+use gpui::{
+    AppContext, Context, Entity, ParentElement, Render, Styled, StyledImage, Window, div, img,
+};
 
 use gpui_component::{
-    IconName, PixelsExt, Sizable, StyledExt, input::{Input, InputEvent, InputState}, label::Label, spinner::Spinner
+    IconName, PixelsExt, Sizable, StyledExt,
+    input::{Input, InputEvent, InputState},
+    label::Label,
+    spinner::Spinner,
 };
 
 pub struct OwnedGames {
@@ -150,12 +155,12 @@ impl Render for OwnedGames {
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
         let window_width = window.viewport_size().width.as_f32();
-        
+
         let col_count = match window_width {
             ..1280.0 => 4,
             1280.0..1740.0 => 5,
             1740.0.. => 7,
-            _ => 4
+            _ => 4,
         };
 
         match (self.loading, &self.error, self.fetched) {
@@ -176,7 +181,12 @@ impl Render for OwnedGames {
 
                             div()
                                 .w_full()
-                                .child(img.w_full().h_auto().object_fit(gpui::ObjectFit::Fill).rounded_md())
+                                .child(
+                                    img.w_full()
+                                        .h_auto()
+                                        .object_fit(gpui::ObjectFit::Fill)
+                                        .rounded_md(),
+                                )
                                 .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
                         })
                     }),
