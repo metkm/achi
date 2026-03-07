@@ -9,13 +9,10 @@ use crate::{error::AppError, models::game::Game};
 
 use std::sync::Arc;
 
-use gpui::{AppContext, Context, Entity, ParentElement, Render, Styled, Window, div, img};
+use gpui::{AppContext, Context, Entity, ParentElement, Render, Styled, StyledImage, Window, div, img};
 
 use gpui_component::{
-    IconName, Sizable, StyledExt,
-    input::{Input, InputEvent, InputState},
-    label::Label,
-    spinner::Spinner,
+    IconName, PixelsExt, Sizable, StyledExt, input::{Input, InputEvent, InputState}, label::Label, spinner::Spinner
 };
 
 pub struct OwnedGames {
@@ -107,6 +104,10 @@ impl OwnedGames {
                     let owned_games = get_game_list()?
                         .into_iter()
                         .filter_map(|id| {
+                            if id == 480 { // spacewar
+                                return None;
+                            }
+
                             apps008.is_subscribed_app(id).then(|| models::game::Game {
                                 id,
                                 name: apps001
@@ -115,7 +116,6 @@ impl OwnedGames {
                                 image_url: format!("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{id}/{}", apps001.get_appdata(id, "small_capsule/english").unwrap_or("".to_string()))
                             })
                         })
-                        // .filter(|id| apps008.is_subscribed_app(*id))
                         .collect::<Vec<models::game::Game>>();
 
                     Ok::<Vec<models::game::Game>, AppError>(owned_games)
@@ -146,14 +146,23 @@ impl OwnedGames {
 impl Render for OwnedGames {
     fn render(
         &mut self,
-        _: &mut gpui::Window,
+        window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
+        let window_width = window.viewport_size().width.as_f32();
+        
+        let col_count = match window_width {
+            ..1280.0 => 4,
+            1280.0..1740.0 => 5,
+            1740.0.. => 7,
+            _ => 4
+        };
+
         match (self.loading, &self.error, self.fetched) {
             (false, None, true) => match self.owned_games.is_empty() {
                 true => div().child("No games found!"),
                 false => div().v_flex().gap_2().child(Input::new(&self.input)).child(
-                    div().grid().grid_cols(6).gap_2().children({
+                    div().grid().grid_cols(col_count).gap_2().children({
                         let items = if self.input.read(cx).value().is_empty() {
                             &self.owned_games
                         } else {
@@ -166,9 +175,8 @@ impl Render for OwnedGames {
                             img.style().aspect_ratio = Some(231.0 / 87.0);
 
                             div()
-                                .v_flex()
-                                .gap_2()
-                                .child(img.w_full().rounded_md())
+                                .w_full()
+                                .child(img.w_full().h_auto().object_fit(gpui::ObjectFit::Fill).rounded_md())
                                 .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
                         })
                     }),
