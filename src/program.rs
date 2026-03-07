@@ -16,6 +16,7 @@ use gpui::{
 };
 
 use gpui_component::button::Button;
+use gpui_component::label::Label;
 use gpui_component::{StyledExt, TitleBar};
 
 use log::error;
@@ -135,7 +136,17 @@ impl Render for Program {
             .max_w_full()
             .overflow_hidden()
             .font_family("Inter 18pt 18pt")
-            .child(TitleBar::new().bg(rgba(0x00000000)).border_0())
+            .child(
+                TitleBar::new()
+                    .bg(rgba(0x00000000))
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .child(Label::new("Achi").text_sm()), 
+                    ),
+            )
             .child(
                 div()
                     .id("scrollable-content")

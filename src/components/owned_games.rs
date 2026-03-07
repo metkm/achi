@@ -167,8 +167,14 @@ impl Render for OwnedGames {
         match (self.loading, &self.error, self.fetched) {
             (false, None, true) => match self.owned_games.is_empty() {
                 true => div().child("No games found!"),
-                false => div().v_flex().gap_2().child(Input::new(&self.input)).child(
-                    div().grid().grid_cols(col_count).children({
+                false => div()
+                    .v_flex()
+                    .gap_2()
+                    .child(
+                        Input::new(&self.input)
+                            .w_96()
+                    )
+                    .child(div().grid().grid_cols(col_count).gap_2().children({
                         let items = if self.input.read(cx).value().is_empty() {
                             &self.owned_games
                         } else {
@@ -182,7 +188,6 @@ impl Render for OwnedGames {
 
                             div()
                                 .w_full()
-                                .p_2()
                                 .rounded_md()
                                 .hover(|this| this.bg(cx.theme().muted))
                                 .child(
@@ -191,10 +196,9 @@ impl Render for OwnedGames {
                                         .object_fit(gpui::ObjectFit::Fill)
                                         .rounded_md(),
                                 )
-                                .child(Label::new(format!("{} - {}", game.id, game.name)).text_sm())
+                                .child(Label::new(format!("{} - {}", game.id, game.name)).pl_1().text_sm())
                         })
-                    }),
-                ),
+                    })),
             },
             (false, Some(error), true) => div().child(error.to_string()),
             (_, None, false) => {
