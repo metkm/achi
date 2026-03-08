@@ -2,6 +2,7 @@ use std::{
     ffi::{CString, c_char, c_int, c_void},
     os::windows::ffi::OsStrExt,
     path::Path,
+    sync::Arc,
 };
 
 use windows::{
@@ -15,19 +16,31 @@ use windows::{
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 use crate::{
-    error::AppError,
-    api::interfaces::{interface::Interface, native::steam_client::ISteamClient018},
+    api::interfaces::{
+        interface::Interface,
+        native::{
+            steam_apps001::ISteamApps001, steam_apps008::ISteamApps008,
+            steam_client::ISteamClient018,
+        },
+    },
+    error::{AppError, Result},
 };
 
 type CreateInterfaceFn =
     unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;
+
+pub type Clients = (
+    Arc<Interface<ISteamClient018>>,
+    Arc<Interface<ISteamApps001>>,
+    Arc<Interface<ISteamApps008>>,
+);
 
 pub struct Steam {
     pub module: HMODULE,
 }
 
 impl Steam {
-    pub fn new() -> Result<Self, AppError> {
+    pub fn new() -> Result<Self> {
         let install_path = Steam::get_install_path()?;
 
         let target_path: Vec<u16> = Path::new(&install_path)
@@ -53,7 +66,7 @@ impl Steam {
         Ok(Self { module })
     }
 
-    pub fn get_install_path() -> Result<String, AppError> {
+    pub fn get_install_path() -> Result<String> {
         let target = "SOFTWARE\\Valve\\Steam";
 
         let st = RegKey::predef(HKEY_LOCAL_MACHINE)
@@ -72,7 +85,7 @@ impl Steam {
         unsafe { std::mem::transmute_copy(&fnc) }
     }
 
-    pub fn get_steam_client(&self) -> Result<Interface<ISteamClient018>, AppError> {
+    pub fn get_steam_client(&self) -> Result<Interface<ISteamClient018>> {
         let c_interface = self
             .get_export_function::<CreateInterfaceFn>("CreateInterface\0")
             .ok_or(AppError::SteamInterfaceCreation)?;

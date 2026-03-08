@@ -1,6 +1,6 @@
 use crate::components::achievements::Achievements;
-use crate::components::games::{OwnedGames, SelectedGameState};
-use crate::error::AppError;
+use crate::components::library::{Library, LibraryState};
+use crate::error::Result;
 
 use crate::api::{
     interfaces::{
@@ -10,9 +10,10 @@ use crate::api::{
             steam_client::ISteamClient018,
         },
     },
-    steam::Steam,
+    steam::{Clients, Steam},
 };
 
+use gpui::prelude::FluentBuilder;
 use gpui::{
     AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
     StatefulInteractiveElement, Styled, Window, div, rgba,
@@ -26,93 +27,82 @@ use log::error;
 use std::sync::Arc;
 
 pub struct Program {
-    steam_client: Option<Arc<Interface<ISteamClient018>>>,
-    steam_apps001: Option<Arc<Interface<ISteamApps001>>>,
-    steam_apps008: Option<Arc<Interface<ISteamApps008>>>,
-    owned_games_entity: Option<Entity<OwnedGames>>,
-    achievements_entity: Entity<Achievements>,
-    selected_game_state: Entity<SelectedGameState>,
+    clients: Result<Clients>,
+    library_state: Entity<LibraryState>,
 }
 
 impl Program {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let game_state = cx.new(|_| SelectedGameState::new());
+        let clients = Self::init_clients();
+        let library_state = cx.new(|cx| LibraryState::new(window, cx));
 
-        let prog = Self {
-            steam_client: None,
-            steam_apps001: None,
-            steam_apps008: None,
-            owned_games_entity: None,
-            achievements_entity: cx.new(|cx| Achievements::new(cx, &game_state)),
-            selected_game_state: game_state,
-        };
+        // we do this in 2 different places (inside try init). It's kinda stupid
+        if let Ok((_, apps001, apps008)) = &clients {
+            library_state
+                .downgrade()
+                .update(cx, |this, cx| {
+                    this.fetch_games(cx, apps001.clone(), apps008.clone());
+                })
+                .ok();
+        }
 
-        prog.try_initialize(window, cx);
-
-        prog
+        Self {
+            clients,
+            library_state,
+        }
     }
 
-    fn try_initialize(&self, window: &mut Window, cx: &mut Context<Self>) {
-        let window_handle = window.window_handle();
+    fn init_clients() -> Result<(
+        Arc<Interface<ISteamClient018>>,
+        Arc<Interface<ISteamApps001>>,
+        Arc<Interface<ISteamApps008>>,
+    )> {
+        let steam = Steam::new()?;
+        let client = steam.get_steam_client()?;
 
+        let pipe = client.create_stream_pipe()?;
+        let user = client.connect_to_global_user(pipe);
+
+        let steam_apps001 = client.get_steam_apps001(user, pipe);
+        let steam_apps008 = client.get_steam_apps008(user, pipe);
+
+        Ok((
+            Arc::new(client),
+            Arc::new(steam_apps001),
+            Arc::new(steam_apps008),
+        ))
+    }
+
+    fn try_init(cx: &mut Context<Self>) {
         cx.spawn(async move |this, cx| {
-            let result = cx
+            let clients = cx
                 .background_executor()
-                .spawn(async {
-                    let steam = Steam::new()?;
-                    let client = steam.get_steam_client()?;
-
-                    let pipe = client.create_stream_pipe()?;
-                    let user = client.connect_to_global_user(pipe);
-
-                    let steam_apps001 = client.get_steam_apps001(user, pipe);
-                    let steam_apps008 = client.get_steam_apps008(user, pipe);
-
-                    Ok::<
-                        (
-                            Interface<ISteamClient018>,
-                            Interface<ISteamApps001>,
-                            Interface<ISteamApps008>,
-                        ),
-                        AppError,
-                    >((client, steam_apps001, steam_apps008))
-                })
+                .spawn(async { Self::init_clients() })
                 .await;
 
-            match result {
-                Ok((client, apps001, apps008)) => {
-                    this.update(cx, |this, cx| {
-                        let client = Arc::new(client);
-                        let apps001 = Arc::new(apps001);
-                        let apps008 = Arc::new(apps008);
-
-                        this.steam_client = Some(client);
-                        this.steam_apps001 = Some(apps001.clone());
-                        this.steam_apps008 = Some(apps008.clone());
-
-                        window_handle
-                            .update(cx, |_, window, cx| {
-                                this.owned_games_entity = Some(cx.new(|cx| {
-                                    OwnedGames::new(
-                                        window,
-                                        cx,
-                                        apps001.clone(),
-                                        apps008.clone(),
-                                        &this.selected_game_state,
-                                    )
-                                }));
-                            })
-                            .ok();
-
-                        cx.notify();
-                    })
-                    .ok();
-                }
-                // we can show these errors in ui later.
+            let clients = match clients {
+                Ok(res) => res,
                 Err(error) => {
                     error!("{error}");
+                    return;
                 }
-            }
+            };
+
+            this.update(cx, |this, cx| {
+                let apps001 = clients.1.clone();
+                let apps008 = clients.2.clone();
+
+                this.library_state
+                    .downgrade()
+                    .update(cx, |this, cx| {
+                        this.fetch_games(cx, apps001, apps008);
+                    })
+                    .ok();
+
+                this.clients = Ok(clients);
+                cx.notify();
+            })
+            .ok();
         })
         .detach();
     }
@@ -124,28 +114,37 @@ impl Render for Program {
         _: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        let content = match self.steam_client {
-            None => div()
-                .v_flex()
-                .size_full()
-                .justify_center()
-                .items_center()
-                .child("Failed to initialize steam. Is it open?")
-                .child(Button::new("Retry").label("Retry").on_click(cx.listener(
-                    |this, _, window, cx| {
-                        this.try_initialize(window, cx);
-                    },
-                ))),
-            Some(_) => match self.selected_game_state.read(cx).game_id {
-                Some(_) => div()
+        let content = 'block: {
+            if let Err(error) = &self.clients {
+                break 'block div()
                     .v_flex()
-                    .flex_grow()
-                    .child(self.achievements_entity.clone()),
-                None => div()
-                    .v_flex()
-                    .flex_grow()
-                    .child((self.owned_games_entity.as_ref().unwrap()).clone()),
-            },
+                    .size_full()
+                    .justify_center()
+                    .items_center()
+                    .gap_2()
+                    .child(format!("Failed to initialize steam: {error}"))
+                    .child(Button::new("retry").label("Retry").on_click(cx.listener(
+                        |_, _, _, cx| {
+                            Self::try_init(cx);
+                        },
+                    )));
+            }
+
+            div().v_flex().flex_grow().when_else(
+                self.library_state.read(cx).selected.is_some(),
+                |_| {
+                    div()
+                        .v_flex()
+                        .flex_grow()
+                        .child(Achievements::new(&self.library_state))
+                },
+                |_| {
+                    div()
+                        .v_flex()
+                        .flex_grow()
+                        .child(Library::new(&self.library_state))
+                },
+            )
         };
 
         div()

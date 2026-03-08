@@ -1,18 +1,18 @@
-use crate::error::AppError;
+use crate::error::{AppError, Result};
 
 use crate::api::interfaces::{
+    interface::Interface,
     native::{
         steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
         steam_user::ISteamUser012, steam_userstats::ISteamUserStats013,
     },
-    interface::Interface
 };
 
 use std::ffi::{CString, c_int};
 use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamClient018> {
-    pub fn create_stream_pipe(&self) -> Result<c_int, AppError> {
+    pub fn create_stream_pipe(&self) -> Result<c_int> {
         let result = unsafe { (self.vtable.create_steam_pipe)(self.address.load(SeqCst)) };
 
         if result == 0 {

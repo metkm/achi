@@ -1,7 +1,4 @@
-use crate::api::interfaces::{
-    interface::Interface,
-    native::steam_userstats::ISteamUserStats013
-};
+use crate::api::interfaces::{interface::Interface, native::steam_userstats::ISteamUserStats013};
 
 use std::ffi::c_char;
 use std::sync::atomic::Ordering::SeqCst;

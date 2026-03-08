@@ -1,6 +1,6 @@
 use crate::api::interfaces::{
     interface::Interface,
-    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008}
+    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
 };
 
 use std::ffi::{CString, c_int};

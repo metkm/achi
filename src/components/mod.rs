@@ -1,2 +1,2 @@
 pub mod achievements;
-pub mod games;
+pub mod library;

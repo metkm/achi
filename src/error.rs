@@ -23,3 +23,5 @@ pub enum AppError {
     #[error(transparent)]
     ReqwestParse(#[from] serde_xml_rs::Error),
 }
+
+pub type Result<T> = std::result::Result<T, AppError>;

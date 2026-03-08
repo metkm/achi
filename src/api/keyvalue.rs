@@ -7,7 +7,7 @@ use std::{
 
 use log::error;
 
-use crate::error::AppError;
+use crate::error::Result;
 
 #[derive(PartialEq, Clone, Debug, Default)]
 enum KeyValueType {
@@ -40,7 +40,7 @@ impl From<u8> for KeyValueType {
     }
 }
 
-fn read_string_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<String, AppError> {
+fn read_string_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<String> {
     let mut buffer = Vec::with_capacity(128);
     let read_count = reader.read_until(0, &mut buffer)?;
 
@@ -51,21 +51,21 @@ fn read_string_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<Stri
     Ok(String::from_utf8(buffer).unwrap_or("".to_string()))
 }
 
-fn read_i32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<i32, AppError> {
+fn read_i32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<i32> {
     let mut buffer = [0; 4];
     reader.read_exact(&mut buffer).ok();
 
     Ok(i32::from_le_bytes(buffer))
 }
 
-fn read_u64_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<u64, AppError> {
+fn read_u64_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<u64> {
     let mut buffer = [0; 8];
     reader.read_exact(&mut buffer).ok();
 
     Ok(u64::from_le_bytes(buffer))
 }
 
-fn read_f32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<f32, AppError> {
+fn read_f32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<f32> {
     let mut buffer = [0; 4];
     reader.read_exact(&mut buffer).ok();
 
@@ -143,7 +143,7 @@ impl KeyValue {
         }
     }
 
-    pub fn from_install_path(install_path: &str, app_id: c_int) -> Result<KeyValue, AppError> {
+    pub fn from_install_path(install_path: &str, app_id: c_int) -> Result<KeyValue> {
         let target = Path::new(install_path)
             .join("appcache")
             .join("stats")
