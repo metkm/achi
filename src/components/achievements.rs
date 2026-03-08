@@ -12,8 +12,6 @@ pub struct Achievements {
 impl Achievements {
     pub fn new(cx: &mut Context<Achievements>, state: &Entity<SelectedGameState>) -> Self {
         cx.observe(state, |this, _, cx| {
-            println!("hello {:?}", this.state.read(cx).game_id);
-
             let Some(game_id) = this.state.read(cx).game_id else {
                 return;
             };
@@ -29,6 +27,7 @@ impl Achievements {
 
     fn load_achievements(&self, cx: &mut Context<Achievements>, game_id: i32) {
         cx.spawn(async move |this, cx| {
+
             let result = cx.background_executor().spawn(async move {
                 Steam::get_install_path()
                     .and_then(|path| KeyValue::from_install_path(&path, game_id))
