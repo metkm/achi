@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::components::achievements::Achievements;
 use crate::components::games::{OwnedGames, SelectedGameState};
 
 use crate::error::AppError;
@@ -25,18 +26,22 @@ pub struct Program {
     steam_client: Option<Arc<Interface<ISteamClient018>>>,
     steam_apps001: Option<Arc<Interface<ISteamApps001>>>,
     steam_apps008: Option<Arc<Interface<ISteamApps008>>>,
-    owned_games: Option<Entity<OwnedGames>>,
+    owned_games_entity: Option<Entity<OwnedGames>>,
+    achievements_entity: Entity<Achievements>,
     selected_game_state: Entity<SelectedGameState>,
 }
 
 impl Program {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let game_state = cx.new(|_| SelectedGameState::new());
+
         let prog = Self {
             steam_client: None,
             steam_apps001: None,
             steam_apps008: None,
-            owned_games: None,
-            selected_game_state: cx.new(|_| SelectedGameState::new()),
+            owned_games_entity: None,
+            achievements_entity: cx.new(|cx| Achievements::new(cx, &game_state)),
+            selected_game_state: game_state,
         };
 
         prog.try_initialize(window, cx);
@@ -84,7 +89,7 @@ impl Program {
 
                         window_handle
                             .update(cx, |_, window, cx| {
-                                this.owned_games = Some(cx.new(|cx| {
+                                this.owned_games_entity = Some(cx.new(|cx| {
                                     OwnedGames::new(
                                         window,
                                         cx,
@@ -129,11 +134,14 @@ impl Render for Program {
                     },
                 ))),
             Some(_) => match self.selected_game_state.read(cx).game_id {
-                Some(game_id) => div().v_flex().flex_grow().child(game_id.to_string()),
+                Some(_) => div()
+                    .v_flex()
+                    .flex_grow()
+                    .child(self.achievements_entity.clone()),
                 None => div()
                     .v_flex()
                     .flex_grow()
-                    .child((self.owned_games.as_ref().unwrap()).clone()),
+                    .child((self.owned_games_entity.as_ref().unwrap()).clone()),
             },
         };
 

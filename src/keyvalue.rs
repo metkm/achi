@@ -73,7 +73,7 @@ fn read_f32_from_bufreader<R: Read>(reader: &mut BufReader<R>) -> Result<f32, Ap
 }
 
 #[allow(dead_code)]
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct KeyValue {
     pub children: Vec<KeyValue>,
     kvt: KeyValueType,
