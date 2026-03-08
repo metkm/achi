@@ -1,15 +1,12 @@
 // #![allow(dead_code, unused)]
 // #![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
 
+mod api;
+mod app;
 mod components;
 mod error;
-mod games;
-mod http_client;
-mod interfaces;
-mod keyvalue;
 mod models;
 mod program;
-mod steam;
 
 use std::{borrow::Cow, rc::Rc, sync::Arc};
 
@@ -50,7 +47,7 @@ fn main() {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let client = http_client::ReqwestHttpClient::new().unwrap();
+    let client = app::http_client::ReqwestHttpClient::new().unwrap();
 
     let application = Application::new()
         .with_http_client(Arc::new(client))

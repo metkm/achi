@@ -1,4 +1,4 @@
-use crate::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
+use crate::api::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
 
 use std::ffi::c_int;
 

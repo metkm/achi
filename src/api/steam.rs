@@ -16,7 +16,7 @@ use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 use crate::{
     error::AppError,
-    interfaces::{interface::Interface, native::steam_client::ISteamClient018},
+    api::interfaces::{interface::Interface, native::steam_client::ISteamClient018},
 };
 
 type CreateInterfaceFn =

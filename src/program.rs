@@ -1,14 +1,16 @@
-use std::sync::Arc;
-
 use crate::components::achievements::Achievements;
 use crate::components::games::{OwnedGames, SelectedGameState};
-
 use crate::error::AppError;
-use crate::steam::Steam;
 
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::{
-    steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
+use crate::api::{
+    interfaces::{
+        interface::Interface,
+        native::{
+            steam_apps001::ISteamApps001, steam_apps008::ISteamApps008,
+            steam_client::ISteamClient018,
+        },
+    },
+    steam::Steam,
 };
 
 use gpui::{
@@ -21,6 +23,7 @@ use gpui_component::label::Label;
 use gpui_component::{StyledExt, TitleBar};
 
 use log::error;
+use std::sync::Arc;
 
 pub struct Program {
     steam_client: Option<Arc<Interface<ISteamClient018>>>,

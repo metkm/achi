@@ -1,4 +1,8 @@
-use crate::{components::games::SelectedGameState, keyvalue::KeyValue, models, steam::Steam};
+use crate::{
+    api::{keyvalue::KeyValue, steam::Steam},
+    components::games::SelectedGameState,
+    models,
+};
 
 use gpui::{Context, Entity, ParentElement, Render, Styled, div, img};
 

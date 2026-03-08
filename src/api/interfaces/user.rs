@@ -1,5 +1,7 @@
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_user::ISteamUser012;
+use crate::api::interfaces::{
+    interface::Interface,
+    native::steam_user::ISteamUser012
+};
 
 use std::sync::atomic::Ordering::SeqCst;
 

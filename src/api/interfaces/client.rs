@@ -1,9 +1,11 @@
 use crate::error::AppError;
 
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::{
-    steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
-    steam_user::ISteamUser012, steam_userstats::ISteamUserStats013,
+use crate::api::interfaces::{
+    native::{
+        steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
+        steam_user::ISteamUser012, steam_userstats::ISteamUserStats013,
+    },
+    interface::Interface
 };
 
 use std::ffi::{CString, c_int};

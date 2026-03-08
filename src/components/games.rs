@@ -1,10 +1,12 @@
-use crate::interfaces::{
-    interface::Interface,
-    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
+use crate::api::{
+    games::get_game_list,
+    interfaces::{
+        interface::Interface,
+        native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
+    },
 };
-
-use crate::games::get_game_list;
 use crate::models;
+
 use crate::{error::AppError, models::game::Game};
 
 use std::sync::Arc;

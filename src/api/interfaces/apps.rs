@@ -1,6 +1,7 @@
-use crate::interfaces::interface::Interface;
-use crate::interfaces::native::steam_apps001::ISteamApps001;
-use crate::interfaces::native::steam_apps008::ISteamApps008;
+use crate::api::interfaces::{
+    interface::Interface,
+    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008}
+};
 
 use std::ffi::{CString, c_int};
 use std::sync::atomic::Ordering::SeqCst;
