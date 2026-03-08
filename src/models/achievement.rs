@@ -23,7 +23,6 @@ impl Achievement {
             .and_then(|n| n.get_kv_by_name("english"))?;
 
         let icon_normal = display_node.get_kv_by_name("icon")?;
-
         let icon_locked = display_node.get_kv_by_name("icon")?;
 
         Some(Achievement {

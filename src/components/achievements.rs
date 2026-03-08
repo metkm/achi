@@ -1,12 +1,12 @@
 use crate::{components::games::SelectedGameState, keyvalue::KeyValue, models, steam::Steam};
 
-use gpui::{Context, Entity, ParentElement, Render, div};
+use gpui::{Context, Entity, ParentElement, Render, Styled, div, img};
+
 use log::error;
 
 pub struct Achievements {
     state: Entity<SelectedGameState>,
-    achievements: Vec<models::achievement::Achievement>
-    // kvt: Result<KeyValue, AppError>,
+    achievements: Vec<models::achievement::Achievement>, // kvt: Result<KeyValue, AppError>,
 }
 
 impl Achievements {
@@ -17,71 +17,76 @@ impl Achievements {
             };
 
             this.load_achievements(cx, game_id);
-        }).detach();
+        })
+        .detach();
 
         Self {
             state: state.clone(),
-            achievements: vec![]
+            achievements: vec![],
         }
     }
 
     fn load_achievements(&self, cx: &mut Context<Achievements>, game_id: i32) {
         cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move {
+                    Steam::get_install_path()
+                        .and_then(|path| KeyValue::from_install_path(&path, game_id))
+                        .and_then(|kvt| {
+                            let achievements = kvt
+                                .get_kv_by_name(&game_id.to_string())
+                                .and_then(|kv| kv.get_kv_by_name("stats"))
+                                .and_then(|stats| {
+                                    let bits = stats
+                                        .children
+                                        .clone()
+                                        .into_iter()
+                                        .map(|stat| {
+                                            stat.children
+                                                .into_iter()
+                                                .filter_map(|b| {
+                                                    if b.name == "bits" {
+                                                        return Some(b.children);
+                                                    }
 
-            let result = cx.background_executor().spawn(async move {
-                Steam::get_install_path()
-                    .and_then(|path| KeyValue::from_install_path(&path, game_id))
-                    .and_then(|kvt| {
-                        let achievements = kvt
-                            .get_kv_by_name(&game_id.to_string())
-                            .and_then(|kv| kv.get_kv_by_name("stats"))
-                            .and_then(|stats| {
-                                let bits = stats
-                                    .children
-                                    .clone()
-                                    .into_iter()
-                                    .map(|stat| {
-                                        stat.children
-                                            .into_iter()
-                                            .filter_map(|b| {
-                                                if b.name == "bits" {
-                                                    return Some(b.children)
-                                                }
-
-                                                None
-                                            })
-                                            .flatten()
+                                                    None
+                                                })
+                                                .flatten()
                                             // .filter(|b| b.name == "bits")
-                                    })
-                                    .flatten()
-                                    .collect::<Vec<KeyValue>>();
+                                        })
+                                        .flatten()
+                                        .collect::<Vec<KeyValue>>();
 
-                                let achievements = bits
-                                    .into_iter()
-                                    .filter_map(|bit| {
-                                        models::achievement::Achievement::from_bit_kv(&bit)
-                                    })
-                                    .collect::<Vec<models::achievement::Achievement>>();
+                                    let achievements = bits
+                                        .into_iter()
+                                        .filter_map(|bit| {
+                                            models::achievement::Achievement::from_bit_kv(&bit)
+                                        })
+                                        .collect::<Vec<models::achievement::Achievement>>();
 
-                                Some(achievements)
-                            });
+                                    Some(achievements)
+                                });
 
-                        Ok(achievements)
-                    })
-            }).await;
+                            Ok(achievements)
+                        })
+                })
+                .await;
 
             match result {
                 Ok(op) => {
                     this.update(cx, |this, cx| {
                         this.achievements = op.unwrap_or(vec![]);
                         cx.notify();
-                    }).ok();
+                    })
+                    .ok();
                 }
                 Err(error) => {
                     error!("error loading achievements {error}");
                 }
             };
-        }).detach();
+        })
+        .detach();
     }
 }
 
@@ -91,7 +96,18 @@ impl Render for Achievements {
         _: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        div()
-            .children(self.achievements.iter().map(|achi| achi.name.to_string()))
+        let game_id = self.state.read(cx).game_id;
+
+        div().children(self.achievements.iter().map(|achi| {
+            div()
+                .flex()
+                .child(img(format!(
+                    "https://cdn.steamstatic.com/steamcommunity/public/images/apps/{}/{}",
+                    game_id.unwrap_or(3450310),
+                    achi.icon_normal
+                )))
+                .child(achi.name.clone())
+                .child(achi.desc.clone())
+        }))
     }
 }

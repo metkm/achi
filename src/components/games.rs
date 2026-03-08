@@ -201,12 +201,15 @@ impl Render for OwnedGames {
                                 .w_full()
                                 .rounded_md()
                                 .hover(|this| this.bg(cx.theme().muted))
-                                .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this, _, _, cx| {
-                                    this.selected_game_state.update(cx, move |this, cx| {
-                                        this.game_id = Some(game_id);
-                                        cx.notify();
-                                    });
-                                }))
+                                .on_mouse_down(
+                                    gpui::MouseButton::Left,
+                                    cx.listener(move |this, _, _, cx| {
+                                        this.selected_game_state.update(cx, move |this, cx| {
+                                            this.game_id = Some(game_id);
+                                            cx.notify();
+                                        });
+                                    }),
+                                )
                                 .child(
                                     img.w_full()
                                         .h_auto()
