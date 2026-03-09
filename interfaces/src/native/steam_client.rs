@@ -11,17 +11,15 @@ use std::ffi::{CString, c_char, c_int};
 use std::sync::atomic::Ordering::SeqCst;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ISteamClient018Functions {
     pub create_steam_pipe: unsafe extern "C" fn(this: *mut c_int) -> c_int,
-
-    pub release_steam_pipe: CallableDefaultNativeFunction,
+    pub release_steam_pipe: unsafe extern "C" fn(this: *mut c_int, pipe: c_int) -> c_int,
 
     pub connect_to_global_user: unsafe extern "C" fn(this: *mut c_int, pipe: c_int) -> c_int,
-
     pub create_local_user: CallableDefaultNativeFunction,
-    pub release_user: CallableDefaultNativeFunction,
 
+    pub release_user: unsafe extern "C" fn(this: *mut c_int, pipe: c_int, user: c_int) -> c_int,
     pub get_isteam_user: unsafe extern "C" fn(
         this: *mut c_int,
         user: c_int,
@@ -94,7 +92,7 @@ impl VTable for ISteamClient018 {
 
 // justreturn option for now.
 impl Interface<ISteamClient018> {
-    pub fn create_stream_pipe(&self) -> Result<c_int> {
+    pub fn create_steam_pipe(&self) -> Result<c_int> {
         let result = unsafe { (self.vtable.create_steam_pipe)(self.address.load(SeqCst)) };
         if result == 0 {
             Err(Error::UnableToCreateSteamPipe)
@@ -103,8 +101,16 @@ impl Interface<ISteamClient018> {
         }
     }
 
+    pub fn release_steam_pipe(&self, pipe: c_int) {
+        unsafe { (self.vtable.release_steam_pipe)(self.address.load(SeqCst), pipe) };
+    }
+
     pub fn connect_to_global_user(&self, pipe: c_int) -> c_int {
         unsafe { (self.vtable.connect_to_global_user)(self.address.load(SeqCst), pipe) }
+    }
+
+    pub fn release_user(&self, pipe: c_int, user: c_int) {
+        unsafe { (self.vtable.release_user)(self.address.load(SeqCst), pipe, user) };
     }
 
     pub fn get_steam_user(&self, user: c_int, pipe: c_int) -> Interface<ISteamUser012> {

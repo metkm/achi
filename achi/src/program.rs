@@ -1,5 +1,7 @@
 use crate::components::achievements::Achievements;
 use crate::components::library::{Library, LibraryState};
+use crate::error::Result;
+use crate::states::steam::SteamState;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
@@ -13,13 +15,18 @@ use gpui_component::{StyledExt, TitleBar};
 
 pub struct Program {
     library_state: Entity<LibraryState>,
+    steam_state: Entity<SteamState>,
 }
 
 impl Program {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let library_state = cx.new(|cx| LibraryState::new(window, cx));
+        let steam_state = cx.new(|_| SteamState::new(None));
+        let library_state = cx.new(|cx| LibraryState::new(window, cx, steam_state.clone()));
 
-        Self { library_state }
+        Self {
+            library_state,
+            steam_state,
+        }
     }
 }
 
@@ -29,11 +36,11 @@ impl Render for Program {
         _: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        let library_state = self.library_state.clone();
-        let state = self.library_state.read(cx);
+        let steam_entity = self.steam_state.clone();
+        let steam_state = steam_entity.read(cx);
 
         let content = 'block: {
-            if let Some(Err(error)) = &state.clients {
+            if let Err(error) = &steam_state.client {
                 break 'block div()
                     .v_flex()
                     .size_full()
@@ -43,28 +50,44 @@ impl Render for Program {
                     .child(format!("Failed to initialize steam: {error}"))
                     .child(Button::new("retry").label("Retry").on_click(cx.listener(
                         move |_, _, _, cx| {
-                            library_state.update(cx, |_, cx| {
-                                LibraryState::try_init_clients(cx);
-                            });
+                            steam_entity.update(cx, |_, cx| {
+                                // SteamState::try_init(cx);
+                            })
                         },
                     )));
             }
 
-            div().v_flex().flex_grow().when_else(
-                self.library_state.read(cx).selected.is_some(),
-                |_| {
-                    div()
+            let library_entity = self.library_state.clone();
+            let library_state = library_entity.read(cx);
+
+            div().v_flex().flex_grow().child({
+                let Some(game_id) = library_state.selected else {
+                    break 'block div()
                         .v_flex()
                         .flex_grow()
-                        .child(Achievements::new(&self.library_state))
-                },
-                |_| {
-                    div()
-                        .v_flex()
-                        .flex_grow()
-                        .child(Library::new(&self.library_state))
-                },
-            )
+                        .child(Library::new(&self.library_state));
+                };
+
+                div()
+                    .v_flex()
+                    .child(Achievements::new(&self.library_state, game_id))
+            })
+
+            // div().v_flex().flex_grow().when_else(
+            //     self.library_state.read(cx).selected.is_some(),
+            //     |_| {
+            //         div()
+            //             .v_flex()
+            //             .flex_grow()
+            //             .child(Achievements::new(&self.library_state))
+            //     },
+            //     |_| {
+            //         div()
+            //             .v_flex()
+            //             .flex_grow()
+            //             .child(Library::new(&self.library_state))
+            //     },
+            // )
         };
 
         div()

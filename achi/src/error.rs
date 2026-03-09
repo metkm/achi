@@ -13,6 +13,9 @@ pub enum AppError {
 
     #[error(transparent)]
     ReqwestParse(#[from] serde_xml_rs::Error),
+
+    #[error("Error reading steam entity")]
+    ReadingSteamEntity,
 }
 
 pub type Result<T> = std::result::Result<T, AppError>;

@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
     let steam = Steam::new()?;
     let client = steam.get_steam_client()?;
 
-    let pipe = client.create_stream_pipe()?;
+    let pipe = client.create_steam_pipe()?;
     let _user = client.connect_to_global_user(pipe);
 
     let stdout = std::io::stdout();
