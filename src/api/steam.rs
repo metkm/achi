@@ -20,7 +20,7 @@ use crate::{
         interface::Interface,
         native::{
             steam_apps001::ISteamApps001, steam_apps008::ISteamApps008,
-            steam_client::ISteamClient018,
+            steam_client::ISteamClient018, steam_userstats::ISteamUserStats013,
         },
     },
     error::{AppError, Result},
@@ -100,3 +100,34 @@ impl Steam {
         Ok(Interface::<ISteamClient018>::new(address))
     }
 }
+
+#[derive(Clone)]
+pub struct SteamClients {
+    pub client: Arc<Interface<ISteamClient018>>,
+    pub apps001: Arc<Interface<ISteamApps001>>,
+    pub apps008: Arc<Interface<ISteamApps008>>,
+    pub user_stats: Arc<Interface<ISteamUserStats013>>,
+}
+
+impl SteamClients {
+    pub fn new() -> Result<Self> {
+        let steam = Steam::new()?;
+        let client = steam.get_steam_client()?;
+
+        let pipe = client.create_stream_pipe()?;
+        let user = client.connect_to_global_user(pipe);
+
+        let apps001 = client.get_steam_apps001(user, pipe);
+        let apps008 = client.get_steam_apps008(user, pipe);
+
+        let user_stats = client.get_steam_user_stats(user, pipe);
+
+        Ok(Self {
+            client: Arc::new(client),
+            apps001: Arc::new(apps001),
+            apps008: Arc::new(apps008),
+            user_stats: Arc::new(user_stats),
+        })
+    }
+}
+

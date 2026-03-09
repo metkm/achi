@@ -1,3 +1,6 @@
+use crate::api::interfaces::native::steam_userstats::ISteamUserStats013;
+use crate::api::steam::SteamClients;
+use crate::error::Result;
 use crate::models;
 use crate::models::achievement::Achievement;
 use crate::{
@@ -10,7 +13,7 @@ use crate::{
         keyvalue::KeyValue,
         steam::Steam,
     },
-    error::{AppError},
+    error::AppError,
 };
 
 use crate::models::game::Game;
@@ -38,6 +41,7 @@ pub struct LibraryState {
     games_filtered: Arc<Vec<models::game::Game>>,
     pub selected: Option<i32>,
     pub achievements: Arc<Vec<models::achievement::Achievement>>,
+    pub clients: Result<SteamClients>
 }
 
 impl LibraryState {
@@ -45,6 +49,7 @@ impl LibraryState {
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search.."));
 
         cx.subscribe_in(&input, window, Self::on_input).detach();
+        Self::try_init_clients(cx);
 
         Self {
             status: RequestStatus::Idle,
@@ -53,7 +58,38 @@ impl LibraryState {
             games_filtered: Arc::new(vec![]),
             selected: None,
             achievements: Arc::new(vec![]),
+            clients: SteamClients::new(),
         }
+    }
+
+
+    pub fn try_init_clients(cx: &mut Context<Self>) {
+        cx.spawn(async move |this, cx| {
+            let clients = cx
+                .background_executor()
+                .spawn(async { SteamClients::new() })
+                .await;
+
+            let clients = match clients {
+                Ok(res) => res,
+                Err(error) => {
+                    error!("{error}");
+                    return;
+                }
+            };
+
+            this.update(cx, |this, cx| {
+                let apps001 = clients.apps001.clone();
+                let apps008 = clients.apps008.clone();
+
+                this.fetch_games(cx, apps001, apps008).ok();
+                this.clients = Ok(clients);
+
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
     }
 
     pub fn fetch_games(
@@ -61,7 +97,7 @@ impl LibraryState {
         cx: &mut Context<Self>,
         apps001: Arc<Interface<ISteamApps001>>,
         apps008: Arc<Interface<ISteamApps008>>,
-    ) {
+    ) -> Result<()> {
         self.status = RequestStatus::Pending;
         cx.notify();
 
@@ -88,6 +124,8 @@ impl LibraryState {
             .ok();
         })
         .detach();
+
+        Ok(())
     }
 
     fn on_input(
@@ -125,12 +163,13 @@ impl LibraryState {
         .detach();
     }
 
-    fn get_achievements(&self, cx: &mut Context<Self>, game_id: i32) {
+    fn get_achievements(&self, cx: &mut Context<Self>, game_id: i32, user_stats: Arc<Interface<ISteamUserStats013>>) {
         cx.spawn(async move |this, cx| {
             let results = cx
                 .background_executor()
                 .spawn(async move {
                     let kvt = KeyValue::from_install_path(&Steam::get_install_path()?, game_id)?;
+                    // let user_stats = clients.user_stats.clone();
 
                     let achievements = kvt
                         .get_kv_by_name(&game_id.to_string())
@@ -147,8 +186,12 @@ impl LibraryState {
                                         .map(|bits| bits.children)
                                 })
                                 .flat_map(|bits| {
-                                    bits.into_iter().filter_map(|bit| {
-                                        models::achievement::Achievement::from_bit_kv(&bit)
+                                    bits.into_iter().filter_map({
+                                    let user_stats = user_stats.clone();
+                                    
+                                    move |bit| {
+                                        models::achievement::Achievement::from_bit_kv(&bit, user_stats.clone())
+                                    }
                                     })
                                 })
                                 .collect::<Vec<_>>()
@@ -192,7 +235,7 @@ impl Library {
 impl RenderOnce for Library {
     fn render(self, window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
         let state = self.state.read(cx);
-        let entity = self.state.downgrade();
+        let entity = self.state.clone();
 
         if let RequestStatus::Pending | RequestStatus::Idle = &state.status {
             return div()
@@ -247,15 +290,14 @@ impl RenderOnce for Library {
                             .rounded_md()
                             .hover(|this| this.bg(cx.theme().muted))
                             .on_mouse_down(gpui::MouseButton::Left, move |_, _, cx| {
-                                entity
-                                    .clone()
-                                    .update(cx, |this, cx| {
-                                        this.selected = Some(game_id);
-                                        this.get_achievements(cx, game_id);
-
-                                        cx.notify();
-                                    })
-                                    .ok();
+                                entity.update(cx, |this, cx| {
+                                    this.selected = Some(game_id);
+                                    
+                                    if let Ok(clients) = &this.clients {
+                                        let user_stats = clients.user_stats.clone();
+                                        this.get_achievements(cx, game_id, user_stats);
+                                    };
+                                });
                             })
                             .child(
                                 img.w_full()

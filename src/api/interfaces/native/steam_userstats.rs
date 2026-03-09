@@ -1,6 +1,6 @@
 use crate::api::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
 
-use std::ffi::{c_char, c_int};
+use std::ffi::{c_char, c_int, c_uint};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -12,10 +12,15 @@ pub struct ISteamUserStats013Functions {
     pub update_avg_rate_stat: CallableDefaultNativeFunction,
     pub get_achievement: CallableDefaultNativeFunction,
 
-    pub set_achievement: unsafe extern "C" fn(this: *mut c_int, info_id: *const c_char) -> bool,
-    pub clear_achievement: unsafe extern "C" fn(this: *mut c_int, info_id: *const c_char) -> bool,
+    pub set_achievement: unsafe extern "C" fn(this: *mut c_int, id: *const c_char) -> bool,
+    pub clear_achievement: unsafe extern "C" fn(this: *mut c_int, id: *const c_char) -> bool,
+    pub get_achievement_and_unlock_time: unsafe extern "C" fn(
+        this: *mut c_int,
+        id: *const c_char,
+        is_achieved: &mut bool,
+        unlock_time: &mut c_uint,
+    ) -> bool,
 
-    pub get_achievement_and_unlock_time: CallableDefaultNativeFunction,
     pub store_stats: CallableDefaultNativeFunction,
     pub get_achievement_icon: CallableDefaultNativeFunction,
     pub get_achievement_display_attribute: CallableDefaultNativeFunction,
