@@ -1,9 +1,7 @@
-use std::sync::Arc;
+use crate::api::keyvalue::KeyValue;
 
-use crate::api::{
-    interfaces::{interface::Interface, native::steam_userstats::ISteamUserStats013},
-    keyvalue::KeyValue,
-};
+use interfaces::{Interface, native::steam_userstats::ISteamUserStats013};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Achievement {
@@ -39,11 +37,11 @@ impl Achievement {
 
         let id_with_null = format!("{}\0", name_node.value);
 
-        let result = user_stats.get_achievement_and_unlock_time(
-            id_with_null.as_ptr() as *const i8,
-            &mut is_achieved,
-            &mut unlock_time,
-        );
+        // let result = user_stats.get_achievement_and_unlock_time(
+        //     id_with_null.as_ptr() as *const i8,
+        //     &mut is_achieved,
+        //     &mut unlock_time,
+        // );
 
         Some(Achievement {
             id: name_node.value.clone(),

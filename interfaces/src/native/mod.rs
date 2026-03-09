@@ -7,3 +7,9 @@ pub mod steam_userstats;
 use std::ffi::c_void;
 
 type CallableDefaultNativeFunction = unsafe extern "C" fn() -> c_void;
+
+pub trait VTable {
+    type Functions: Copy;
+
+    fn vtable(&self) -> *const Self::Functions;
+}

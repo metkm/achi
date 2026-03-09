@@ -1,16 +1,13 @@
-use std::{fs, sync::Arc};
+use crate::{error::Result, models};
 
-use crate::{
-    api::interfaces::{
-        interface::Interface,
-        native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
-    },
-    error::Result,
-    models,
+use interfaces::{
+    Interface,
+    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
 };
 
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
+use std::{fs, sync::Arc};
 
 pub enum RequestStatus {
     Idle,

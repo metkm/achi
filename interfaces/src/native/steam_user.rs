@@ -1,4 +1,5 @@
-use crate::api::interfaces::{interface::VTable, native::CallableDefaultNativeFunction};
+use super::CallableDefaultNativeFunction;
+use super::VTable;
 
 use std::os::raw::c_int;
 

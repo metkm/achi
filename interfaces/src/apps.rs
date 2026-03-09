@@ -1,5 +1,5 @@
-use crate::api::interfaces::{
-    interface::Interface,
+use super::{
+    Interface,
     native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
 };
 

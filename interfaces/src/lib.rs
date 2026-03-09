@@ -1,10 +1,14 @@
-use std::{ffi::c_int, sync::atomic::AtomicPtr};
+pub mod apps;
+pub mod error;
+pub mod native;
+pub mod steam;
+pub mod user;
 
-pub trait VTable {
-    type Functions: Copy;
-
-    fn vtable(&self) -> *const Self::Functions;
-}
+use native::VTable;
+use std::{
+    ffi::{c_char, c_int, c_void},
+    sync::atomic::AtomicPtr,
+};
 
 #[derive(Debug)]
 pub struct Interface<I: VTable> {
@@ -23,3 +27,6 @@ impl<I: VTable> Interface<I> {
         }
     }
 }
+
+pub type CreateInterfaceFn =
+    unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;

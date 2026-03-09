@@ -25,7 +25,7 @@ impl RenderOnce for Achievements {
             return div().m_auto().child("Achievements are empty!").child(
                 Button::new("clear_achievements")
                     .label("Go Back")
-                    .on_click( move |_, _, cx| {
+                    .on_click(move |_, _, cx| {
                         LibraryState::select_game(&entity, cx, None);
 
                         // entity.update(cx, |this, cx| {

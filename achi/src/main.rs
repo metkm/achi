@@ -18,7 +18,7 @@ use gpui_component_assets::Assets;
 use crate::program::Program;
 
 pub fn init(cx: &mut App) {
-    const CATPPUCCIN_MOCHA: &[u8] = include_bytes!("../assets/themes/catppuccin.json");
+    const CATPPUCCIN_MOCHA: &[u8] = include_bytes!("assets/themes/catppuccin.json");
 
     let theme_str = std::str::from_utf8(CATPPUCCIN_MOCHA).unwrap();
     let theme_set: ThemeSet = serde_json::from_str(theme_str).unwrap();
@@ -30,16 +30,6 @@ pub fn init(cx: &mut App) {
     {
         Theme::global_mut(cx).apply_config(&Rc::new(theme_config.clone()));
     }
-
-    // ThemeRegistry::watch_dir(PathBuf::from("./assets/themes"), cx, |cx| {
-    //     let theme = ThemeRegistry::global(cx)
-    //         .themes()
-    //         .get("Catppuccin Mocha")
-    //         .cloned()
-    //         .unwrap();
-
-    //     Theme::global_mut(cx).apply_config(&theme);
-    // });
 }
 
 fn main() {
@@ -56,7 +46,7 @@ fn main() {
     application.run(|cx| {
         cx.text_system()
             .add_fonts(vec![Cow::Borrowed(include_bytes!(
-                "../assets/Inter-Medium.ttf"
+                "assets/Inter-Medium.ttf"
             ))])
             .unwrap();
 

@@ -1,4 +1,4 @@
-use crate::api::interfaces::interface::VTable;
+use super::VTable;
 
 use std::ffi::{c_char, c_int};
 

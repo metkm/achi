@@ -1,8 +1,18 @@
 use std::{
-    ffi::{CString, c_char, c_int, c_void},
+    ffi::{CString, c_void},
     os::windows::ffi::OsStrExt,
     path::Path,
     sync::Arc,
+};
+
+use crate::error::{Error, Result};
+
+use super::{
+    CreateInterfaceFn, Interface,
+    native::{
+        steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
+        steam_userstats::ISteamUserStats013,
+    },
 };
 
 use windows::{
@@ -15,19 +25,35 @@ use windows::{
 
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
-use crate::{
-    api::interfaces::{
-        interface::Interface,
-        native::{
-            steam_apps001::ISteamApps001, steam_apps008::ISteamApps008,
-            steam_client::ISteamClient018, steam_userstats::ISteamUserStats013,
-        },
-    },
-    error::{AppError, Result},
-};
+#[derive(Clone, Debug)]
+pub struct SteamClients {
+    // pub client: Arc<Interface<ISteamClient018>>,
+    pub apps001: Arc<Interface<ISteamApps001>>,
+    pub apps008: Arc<Interface<ISteamApps008>>,
+    pub user_stats: Arc<Interface<ISteamUserStats013>>,
+}
 
-type CreateInterfaceFn =
-    unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;
+impl SteamClients {
+    pub fn new() -> Result<Self> {
+        let steam = Steam::new()?;
+        let client = steam.get_steam_client()?;
+        let pipe = client.create_stream_pipe()?;
+
+        let user = client.connect_to_global_user(pipe);
+
+        let apps001 = client.get_steam_apps001(user, pipe);
+        let apps008 = client.get_steam_apps008(user, pipe);
+
+        let user_stats = client.get_steam_user_stats(user, pipe);
+
+        Ok(Self {
+            // client: Arc::new(client),
+            apps001: Arc::new(apps001),
+            apps008: Arc::new(apps008),
+            user_stats: Arc::new(user_stats),
+        })
+    }
+}
 
 pub struct Steam {
     pub module: HMODULE,
@@ -51,7 +77,7 @@ impl Steam {
                 LOAD_WITH_ALTERED_SEARCH_PATH,
             )
             .map_err(|_| {
-                AppError::SteamClientLoad(
+                Error::UnableToLoadSteam(
                     String::from_utf16(&target_path).unwrap_or_else(|_| String::from("")),
                 )
             })?
@@ -65,7 +91,7 @@ impl Steam {
 
         let st = RegKey::predef(HKEY_LOCAL_MACHINE)
             .open_subkey(target)
-            .map_err(|_| AppError::RegistryRead(target.to_string()))?;
+            .map_err(|_| Error::UnableToReadRegistry(target.to_string()))?;
 
         let path: String = st.get_value("InstallPath")?;
 
@@ -82,7 +108,7 @@ impl Steam {
     pub fn get_steam_client(&self) -> Result<Interface<ISteamClient018>> {
         let c_interface = self
             .get_export_function::<CreateInterfaceFn>("CreateInterface\0")
-            .ok_or(AppError::SteamInterfaceCreation)?;
+            .ok_or(Error::UnableToCreateInterface)?;
 
         let address = unsafe {
             c_interface(
@@ -92,35 +118,5 @@ impl Steam {
         };
 
         Ok(Interface::<ISteamClient018>::new(address))
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct SteamClients {
-    // pub client: Arc<Interface<ISteamClient018>>,
-    pub apps001: Arc<Interface<ISteamApps001>>,
-    pub apps008: Arc<Interface<ISteamApps008>>,
-    pub user_stats: Arc<Interface<ISteamUserStats013>>,
-}
-
-impl SteamClients {
-    pub fn new() -> Result<Self> {
-        let steam = Steam::new()?;
-        let client = steam.get_steam_client()?;
-
-        let pipe = client.create_stream_pipe()?;
-        let user = client.connect_to_global_user(pipe);
-
-        let apps001 = client.get_steam_apps001(user, pipe);
-        let apps008 = client.get_steam_apps008(user, pipe);
-
-        let user_stats = client.get_steam_user_stats(user, pipe);
-
-        Ok(Self {
-            // client: Arc::new(client),
-            apps001: Arc::new(apps001),
-            apps008: Arc::new(apps008),
-            user_stats: Arc::new(user_stats),
-        })
     }
 }

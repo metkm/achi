@@ -1,0 +1,9 @@
+[package]
+name = "interfaces"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = "2.0.18"
+windows = { version = "0.62.2", features = ["Win32_System_LibraryLoader"] }
+winreg = "0.55.0"
