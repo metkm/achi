@@ -1,9 +1,7 @@
 use crate::components::achievements::Achievements;
 use crate::components::library::{Library, LibraryState};
-use crate::error::Result;
 use crate::states::steam::SteamState;
 
-use gpui::prelude::FluentBuilder;
 use gpui::{
     AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
     StatefulInteractiveElement, Styled, Window, div, rgba,
@@ -20,7 +18,7 @@ pub struct Program {
 
 impl Program {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let steam_state = cx.new(|_| SteamState::new(None));
+        let steam_state = cx.new(|_| SteamState::new());
         let library_state = cx.new(|cx| LibraryState::new(window, cx, steam_state.clone()));
 
         Self {
@@ -70,24 +68,8 @@ impl Render for Program {
 
                 div()
                     .v_flex()
-                    .child(Achievements::new(&self.library_state, game_id))
+                    .child(Achievements::new(&self.library_state))
             })
-
-            // div().v_flex().flex_grow().when_else(
-            //     self.library_state.read(cx).selected.is_some(),
-            //     |_| {
-            //         div()
-            //             .v_flex()
-            //             .flex_grow()
-            //             .child(Achievements::new(&self.library_state))
-            //     },
-            //     |_| {
-            //         div()
-            //             .v_flex()
-            //             .flex_grow()
-            //             .child(Library::new(&self.library_state))
-            //     },
-            // )
         };
 
         div()

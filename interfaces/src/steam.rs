@@ -17,7 +17,7 @@ use super::{
 
 use windows::{
     Win32::{
-        Foundation::HMODULE,
+        Foundation::{FreeLibrary, HMODULE},
         System::LibraryLoader::{GetProcAddress, LOAD_WITH_ALTERED_SEARCH_PATH, LoadLibraryExW},
     },
     core::{PCSTR, PCWSTR},
@@ -27,19 +27,50 @@ use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 #[derive(Clone, Debug)]
 pub struct SteamClient {
+    steam: Steam,
     pub client: Arc<Interface<ISteamClient018>>,
     pub apps001: Arc<Interface<ISteamApps001>>,
     pub apps008: Arc<Interface<ISteamApps008>>,
     pub user_stats: Arc<Interface<ISteamUserStats013>>,
+    pipe: i32,
+    user: i32,
 }
 
 impl SteamClient {
-    pub fn new(id: Option<i32>) -> Result<Self> {
-        if let Some(id) = id {
-            unsafe {
-                std::env::set_var("SteamAppId", id.to_string());
-            }
-        }
+    pub fn new() -> Result<Self> {
+        let steam = Steam::new()?;
+        let client = steam.get_steam_client()?;
+
+        let pipe = client.create_steam_pipe()?;
+        let user = client.connect_to_global_user(pipe);
+
+        let apps001 = client.get_steam_apps001(user, pipe);
+        let apps008 = client.get_steam_apps008(user, pipe);
+        let user_stats = client.get_steam_user_stats(user, pipe);
+
+        Ok(Self {
+            steam,
+            client: Arc::new(client),
+            apps001: Arc::new(apps001),
+            apps008: Arc::new(apps008),
+            user_stats: Arc::new(user_stats),
+            pipe,
+            user,
+        })
+    }
+
+    pub fn unload(&mut self) {
+        self.client.release_user(self.pipe, self.user);
+        self.client.release_steam_pipe(self.pipe);
+
+        self.pipe = 0;
+        self.user = 0;
+
+        self.steam.release_module();
+    }
+
+    pub fn reload(&mut self) -> Result<()> {
+        self.unload();
 
         let steam = Steam::new()?;
         let client = steam.get_steam_client()?;
@@ -47,52 +78,22 @@ impl SteamClient {
         let pipe = client.create_steam_pipe()?;
         let user = client.connect_to_global_user(pipe);
 
-        println!("pipe: {}, user: {}", pipe, user);
-
         let apps001 = client.get_steam_apps001(user, pipe);
         let apps008 = client.get_steam_apps008(user, pipe);
         let user_stats = client.get_steam_user_stats(user, pipe);
 
-        Ok(Self {
-            client: Arc::new(client),
-            apps001: Arc::new(apps001),
-            apps008: Arc::new(apps008),
-            user_stats: Arc::new(user_stats),
-        })
+        self.steam = steam;
+        self.client = Arc::new(client);
+
+        self.pipe = pipe;
+        self.user = user;
+
+        self.apps001 = Arc::new(apps001);
+        self.apps008 = Arc::new(apps008);
+        self.user_stats = Arc::new(user_stats);
+
+        Ok(())
     }
-
-    // pub fn get_apps001(&self) -> Arc<Interface<ISteamApps001>> {
-    //     Arc::new(self.client.get_steam_apps001(self.user, self.pipe))
-    // }
-
-    // pub fn get_apps008(&self) -> Arc<Interface<ISteamApps008>> {
-    //     Arc::new(self.client.get_steam_apps008(self.user, self.pipe))
-    // }
-
-    // pub fn get_user_stats(&self) -> Arc<Interface<ISteamUserStats013>> {
-    //     Arc::new(self.client.get_steam_user_stats(self.user, self.pipe))
-    // }
-
-    // pub fn unload(&mut self) {
-    //     self.client.release_steam_pipe(self.pipe);
-    //     self.client.release_user(self.pipe, self.user);
-
-    //     self.pipe = 0;
-    //     self.user = 0;
-
-    //     self.steam.release_module();
-    // }
-
-    // pub fn reload(&mut self) -> Result<()> {
-    //     self.unload();
-
-    //     let steam = Steam::new()?;
-
-    //     self.steam = steam;
-    //     self.client = Arc::new(self.steam.get_steam_client()?);
-
-    //     Ok(())
-    // }
 }
 
 #[derive(Clone, Debug)]
@@ -129,9 +130,9 @@ impl Steam {
         })
     }
 
-    // fn release_module(&self) {
-    //     unsafe { FreeLibrary(*self.module).expect("Error freeing steamclient.dll") };
-    // }
+    fn release_module(&self) {
+        unsafe { FreeLibrary(*self.module).expect("Error freeing steamclient.dll") };
+    }
 
     pub fn get_install_path() -> Result<String> {
         let target = "SOFTWARE\\Valve\\Steam";

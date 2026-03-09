@@ -52,7 +52,7 @@ impl LibraryState {
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search.."));
 
         cx.subscribe_in(&input, window, Self::on_input).detach();
-        
+
         Self::fetch_games(cx, &steam_entity);
 
         // let _ = cx.observe(&steam_entity, |this, _, cx| {
@@ -70,30 +70,30 @@ impl LibraryState {
     }
 
     // pub fn try_init_clients(cx: &mut Context<Self>) {
-        // cx.spawn(async move |this, cx| {
-        //     // let client = cx
-        //     //     .background_executor()
-        //     //     .spawn(async move { SteamClient::new() })
-        //     //     .await;
+    // cx.spawn(async move |this, cx| {
+    //     // let client = cx
+    //     //     .background_executor()
+    //     //     .spawn(async move { SteamClient::new() })
+    //     //     .await;
 
-        //     let client = match SteamClient::new() {
-        //         Ok(res) => res,
-        //         Err(error) => {
-        //             error!("{error}");
-        //             return;
-        //         }
-        //     };
+    //     let client = match SteamClient::new() {
+    //         Ok(res) => res,
+    //         Err(error) => {
+    //             error!("{error}");
+    //             return;
+    //         }
+    //     };
 
-        //     this.update(cx, |this, cx| {
-        //         this.fetch_games(cx, client.get_apps001(), client.get_apps008())
-        //             .ok();
-        //         this.client = Some(Ok(client));
+    //     this.update(cx, |this, cx| {
+    //         this.fetch_games(cx, client.get_apps001(), client.get_apps008())
+    //             .ok();
+    //         this.client = Some(Ok(client));
 
-        //         cx.notify();
-        //     })
-        //     .ok();
-        // })
-        // .detach();
+    //         cx.notify();
+    //     })
+    //     .ok();
+    // })
+    // .detach();
     // }
 
     pub fn fetch_games(cx: &mut Context<Self>, steam_entity: &Entity<SteamState>) {
@@ -108,7 +108,8 @@ impl LibraryState {
             this.update(cx, |this, cx| {
                 this.status = RequestStatus::Pending;
                 cx.notify();
-            }).ok();
+            })
+            .ok();
 
             let result = cx
                 .background_executor()
@@ -236,15 +237,18 @@ impl LibraryState {
     }
 
     pub fn select_game(entity: &Entity<Self>, cx: &mut App, game_id: Option<i32>) {
-        if let Some(id) = game_id {
-            unsafe {
-                std::env::set_var("SteamAppId", id.to_string());
-            };
-        }
+        // if let Some(id) = game_id {
+        //     unsafe {
+        //         std::env::set_var("SteamAppId", id.to_string());
+        //     };
+        // }
 
         entity.update(cx, |this, cx| {
             this.selected = game_id;
             
+            this.steam_entity.update(cx, |this, _| {
+                this.reload(game_id);
+            });
 
             // Self::fetch_games(cx);
 

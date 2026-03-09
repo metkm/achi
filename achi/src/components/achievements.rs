@@ -6,16 +6,16 @@ use crate::{components::library::LibraryState, states::steam::SteamState};
 #[derive(IntoElement)]
 pub struct Achievements {
     state: Entity<LibraryState>,
-    steam_state: SteamState,
+    // steam_state: SteamState,
 }
 
 impl Achievements {
-    pub fn new(state: &Entity<LibraryState>, app_id: i32) -> Self {
-        let steam_state = SteamState::new(Some(app_id));
+    pub fn new(state: &Entity<LibraryState>) -> Self {
+        // let steam_state = SteamState::new();
 
         Self {
             state: state.clone(),
-            steam_state,
+            // steam_state,
         }
     }
 }
