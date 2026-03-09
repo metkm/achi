@@ -3,7 +3,7 @@ use crate::api::interfaces::{interface::VTable, native::CallableDefaultNativeFun
 use std::ffi::c_int;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ISteamApps008Functions {
     pub is_subscribed: CallableDefaultNativeFunction,
     pub is_low_violence: CallableDefaultNativeFunction,
@@ -38,6 +38,7 @@ pub struct ISteamApps008Functions {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ISteamApps008 {
     pub vtable: *const ISteamApps008Functions,
 }

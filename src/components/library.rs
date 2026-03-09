@@ -1,5 +1,4 @@
-use crate::api::interfaces::native::steam_userstats::ISteamUserStats013;
-use crate::api::steam::SteamClients;
+use crate::api::steam::{self, SteamClients};
 use crate::error::Result;
 use crate::models;
 use crate::models::achievement::Achievement;
@@ -21,8 +20,7 @@ use crate::models::game::Game;
 use std::sync::Arc;
 
 use gpui::{
-    AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, RenderOnce,
-    Styled, StyledImage, Window, div, img,
+    App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, RenderOnce, Styled, StyledImage, Window, div, img
 };
 
 use gpui_component::{
@@ -41,7 +39,7 @@ pub struct LibraryState {
     games_filtered: Arc<Vec<models::game::Game>>,
     pub selected: Option<i32>,
     pub achievements: Arc<Vec<models::achievement::Achievement>>,
-    pub clients: Result<SteamClients>
+    pub clients: Option<Result<SteamClients>>,
 }
 
 impl LibraryState {
@@ -58,16 +56,15 @@ impl LibraryState {
             games_filtered: Arc::new(vec![]),
             selected: None,
             achievements: Arc::new(vec![]),
-            clients: SteamClients::new(),
+            clients: None,
         }
     }
-
 
     pub fn try_init_clients(cx: &mut Context<Self>) {
         cx.spawn(async move |this, cx| {
             let clients = cx
                 .background_executor()
-                .spawn(async { SteamClients::new() })
+                .spawn(async move { SteamClients::new() })
                 .await;
 
             let clients = match clients {
@@ -83,7 +80,12 @@ impl LibraryState {
                 let apps008 = clients.apps008.clone();
 
                 this.fetch_games(cx, apps001, apps008).ok();
-                this.clients = Ok(clients);
+
+                // if let Some(_clients) = clients {
+                    this.clients = Some(Ok(clients));
+                // }
+
+                // on_init(this, cx);
 
                 cx.notify();
             })
@@ -163,13 +165,16 @@ impl LibraryState {
         .detach();
     }
 
-    fn get_achievements(&self, cx: &mut Context<Self>, game_id: i32, user_stats: Arc<Interface<ISteamUserStats013>>) {
+    pub fn load_achievements(
+        cx: &mut Context<Self>,
+        game_id: i32,
+    ) {
         cx.spawn(async move |this, cx| {
             let results = cx
                 .background_executor()
                 .spawn(async move {
                     let kvt = KeyValue::from_install_path(&Steam::get_install_path()?, game_id)?;
-                    // let user_stats = clients.user_stats.clone();
+                    let clients = steam::SteamClients::new()?;
 
                     let achievements = kvt
                         .get_kv_by_name(&game_id.to_string())
@@ -187,11 +192,14 @@ impl LibraryState {
                                 })
                                 .flat_map(|bits| {
                                     bits.into_iter().filter_map({
-                                    let user_stats = user_stats.clone();
-                                    
-                                    move |bit| {
-                                        models::achievement::Achievement::from_bit_kv(&bit, user_stats.clone())
-                                    }
+                                        let user_stats = clients.user_stats.clone();
+
+                                        move |bit| {
+                                            models::achievement::Achievement::from_bit_kv(
+                                                &bit,
+                                                user_stats.clone(),
+                                            )
+                                        }
                                     })
                                 })
                                 .collect::<Vec<_>>()
@@ -217,7 +225,25 @@ impl LibraryState {
         })
         .detach();
     }
+
+    pub fn select_game(entity: &Entity<Self>, cx: &mut App, game_id: Option<i32>) {
+        if let Some(id) = game_id {
+            unsafe { std::env::set_var("SteamAppId", id.to_string()); };
+        }
+
+        entity.update(cx, |this, cx| {
+            this.selected = game_id;
+            
+
+            if let Some(game_id) = game_id {
+                LibraryState::load_achievements(cx, game_id);
+            }
+
+            cx.notify(); 
+        })
+    }
 }
+
 
 #[derive(IntoElement)]
 pub struct Library {
@@ -290,14 +316,19 @@ impl RenderOnce for Library {
                             .rounded_md()
                             .hover(|this| this.bg(cx.theme().muted))
                             .on_mouse_down(gpui::MouseButton::Left, move |_, _, cx| {
-                                entity.update(cx, |this, cx| {
-                                    this.selected = Some(game_id);
-                                    
-                                    if let Ok(clients) = &this.clients {
-                                        let user_stats = clients.user_stats.clone();
-                                        this.get_achievements(cx, game_id, user_stats);
-                                    };
-                                });
+                                LibraryState::select_game(&entity, cx, Some(game_id));
+
+
+
+                                // entity.update(cx, |this, cx| {
+                                //     this.selected = Some(game_id);
+
+                                // if let Ok(clients) = &this.clients {
+                                //     let user_stats = clients.user_stats.clone();
+                                //     this.get_achievements(cx, game_id, user_stats);
+                                // };
+
+                                // });
                             })
                             .child(
                                 img.w_full()

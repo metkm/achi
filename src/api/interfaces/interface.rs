@@ -6,6 +6,7 @@ pub trait VTable {
     fn vtable(&self) -> *const Self::Functions;
 }
 
+#[derive(Debug)]
 pub struct Interface<I: VTable> {
     pub vtable: I::Functions,
     pub address: AtomicPtr<c_int>,

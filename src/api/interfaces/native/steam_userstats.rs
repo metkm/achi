@@ -14,11 +14,12 @@ pub struct ISteamUserStats013Functions {
 
     pub set_achievement: unsafe extern "C" fn(this: *mut c_int, id: *const c_char) -> bool,
     pub clear_achievement: unsafe extern "C" fn(this: *mut c_int, id: *const c_char) -> bool,
+
     pub get_achievement_and_unlock_time: unsafe extern "C" fn(
         this: *mut c_int,
         id: *const c_char,
-        is_achieved: &mut bool,
-        unlock_time: &mut c_uint,
+        is_achieved: *mut bool,
+        unlock_time: *mut c_uint,
     ) -> bool,
 
     pub store_stats: CallableDefaultNativeFunction,
@@ -59,6 +60,7 @@ pub struct ISteamUserStats013Functions {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ISteamUserStats013 {
     pub vtable: *const ISteamUserStats013Functions,
 }

@@ -29,12 +29,6 @@ use crate::{
 type CreateInterfaceFn =
     unsafe extern "C" fn(version: *const c_char, return_code: *mut c_void) -> *mut c_int;
 
-pub type Clients = (
-    Arc<Interface<ISteamClient018>>,
-    Arc<Interface<ISteamApps001>>,
-    Arc<Interface<ISteamApps008>>,
-);
-
 pub struct Steam {
     pub module: HMODULE,
 }
@@ -101,9 +95,9 @@ impl Steam {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SteamClients {
-    pub client: Arc<Interface<ISteamClient018>>,
+    // pub client: Arc<Interface<ISteamClient018>>,
     pub apps001: Arc<Interface<ISteamApps001>>,
     pub apps008: Arc<Interface<ISteamApps008>>,
     pub user_stats: Arc<Interface<ISteamUserStats013>>,
@@ -123,11 +117,10 @@ impl SteamClients {
         let user_stats = client.get_steam_user_stats(user, pipe);
 
         Ok(Self {
-            client: Arc::new(client),
+            // client: Arc::new(client),
             apps001: Arc::new(apps001),
             apps008: Arc::new(apps008),
             user_stats: Arc::new(user_stats),
         })
     }
 }
-

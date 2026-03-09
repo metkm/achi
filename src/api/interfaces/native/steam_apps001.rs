@@ -15,6 +15,7 @@ pub struct ISteamApps001Functions {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ISteamApps001 {
     pub vtable: *const ISteamApps001Functions,
 }
