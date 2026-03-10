@@ -81,24 +81,31 @@ impl Render for Program {
             let library_entity = self.library_state.clone();
             let library_state = library_entity.read(cx);
 
-            div().v_flex().flex_grow().child({
-                let Some(_) = library_state.selected else {
+            div().size_full().child({
+                if library_state.selected.is_none() {
                     break 'block div()
                         .v_flex()
                         .flex_grow()
                         .child(Library::new(&self.library_state));
-                };
+                }
 
                 div()
                     .v_flex()
-                    .flex_grow()
+                    .size_full()
                     .gap_2()
-                    .child(Button::new("back").label("Go Back").on_click(cx.listener(
-                        move |_, _, _, cx| {
-                            LibraryState::select_game(&library_entity, cx, None);
-                        },
+                    .child(
+                        Button::new("back").label("Go Back").on_click(cx.listener(
+                            move |_, _, _, cx| {
+                                LibraryState::select_game(&library_entity, cx, None);
+                            },
                     )))
-                    .child(Achievements::new(&self.achievements_state))
+                    .child(
+                        div()
+                            .id("achievements-content")
+                            .overflow_scroll()
+                            .flex_1()
+                            .child(Achievements::new(&self.achievements_state))
+                    )
             })
         };
 
