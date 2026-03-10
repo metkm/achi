@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use interfaces::worker::{self, SteamWorker};
+use interfaces::worker::{self, Cmd, SteamWorker};
 
 use crate::api::keyvalue::KeyValue;
 
@@ -33,9 +33,11 @@ impl Achievement {
             return None;
         };
 
-        let Ok(result) = lock.send(worker::GetAchievement {
+        let res = Cmd::GetAchievement(worker::GetAchievement {
             id: name_node.value.to_string(),
-        }) else {
+        });
+
+        let Ok(result) = lock.send::<worker::GetAchievementResponse>(res) else {
             return None;
         };
 

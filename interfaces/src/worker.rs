@@ -1,16 +1,17 @@
-use std::io::{BufRead, BufReader, Read, Write};
+use std::fmt::Debug;
+use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{Result, Error};
+use crate::error::Result;
 
 pub trait WorkerMessage: Serialize + DeserializeOwned {
     type Response: DeserializeOwned + Serialize;
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetAchievement {
     pub id: String,
 }
@@ -22,6 +23,11 @@ pub struct GetAchievementResponse {
 
 impl WorkerMessage for GetAchievement {
     type Response = GetAchievementResponse;
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Cmd {
+    GetAchievement(GetAchievement),
 }
 
 pub struct SteamWorker {
@@ -37,6 +43,7 @@ impl SteamWorker {
             .arg(id.to_string())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
+            // .stderr(Stdio::piped())
             .spawn()?;
 
         let stdin = child.stdin.take().unwrap();
@@ -49,16 +56,13 @@ impl SteamWorker {
         })
     }
 
-    pub fn send<T>(&mut self, request: T) -> Result<T::Response>
-    where
-        T: WorkerMessage + Serialize,
-    {
+    pub fn send<T: DeserializeOwned>(&mut self, request: Cmd) -> Result<T> {
         writeln!(self.stdin, "{}", serde_json::to_string(&request).unwrap())?;
         self.stdin.flush()?;
 
         let mut line = String::new();
         self.reader.read_line(&mut line)?;
 
-        Ok(serde_json::from_str::<T::Response>(&line)?)
+        Ok(serde_json::from_str::<T>(&line)?)
     }
 }

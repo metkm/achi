@@ -3,10 +3,8 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use clap::Parser;
 use interfaces::{
     steam::Steam,
-    worker::{GetAchievement, GetAchievementResponse},
+    worker::{Cmd, GetAchievement, GetAchievementResponse},
 };
-
-use serde::{Deserialize, Serialize};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -14,17 +12,7 @@ struct Args {
     app_id: Option<i32>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "method", content = "params")] // Optional: gives you cleaner JSON
-pub enum Command {
-    GetAchievement(GetAchievement),
-}
-
 fn main() -> anyhow::Result<()> {
-    env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Info)
-        .init();
-
     let args = Args::parse();
 
     if let Some(app_id) = args.app_id {
@@ -47,10 +35,6 @@ fn main() -> anyhow::Result<()> {
     let mut writer = BufWriter::new(stdout.lock());
     let mut reader = BufReader::new(stdin.lock());
 
-    // if let Some(app_id) = args.app_id {
-    //     writer.flush().unwrap();
-    // }
-
     let mut buf = String::new();
 
     loop {
@@ -59,17 +43,19 @@ fn main() -> anyhow::Result<()> {
             break;
         }
 
-        let Ok(cmd) = serde_json::from_str::<Command>(&buf) else {
+        let Ok(cmd) = serde_json::from_str::<Cmd>(&buf) else {
             continue;
         };
 
         match cmd {
-            Command::GetAchievement(GetAchievement { id }) => {
+            Cmd::GetAchievement(GetAchievement { id }) => {
                 let mut is_achieved = false;
                 let mut unlock_time = 0;
 
+                let c_id = std::ffi::CString::new(id).expect("Invalid ID");
+
                 user_stats.get_achievement_and_unlock_time(
-                    format!("{id}\0").as_ptr() as *const i8,
+                    c_id.as_ptr(),
                     &mut is_achieved,
                     &mut unlock_time,
                 );

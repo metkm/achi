@@ -18,7 +18,7 @@ pub enum Error {
     Serde(#[from] serde_json::Error),
 
     #[error("error reading stdout/stdin from worker")]
-    WorkerStdio
+    WorkerStdio,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
