@@ -27,13 +27,13 @@ use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 #[derive(Clone, Debug)]
 pub struct SteamClient {
-    steam: Steam,
+    // steam: Steam,
     pub client: Arc<Interface<ISteamClient018>>,
     pub apps001: Arc<Interface<ISteamApps001>>,
     pub apps008: Arc<Interface<ISteamApps008>>,
     pub user_stats: Arc<Interface<ISteamUserStats013>>,
-    pipe: i32,
-    user: i32,
+    // pipe: i32,
+    // user: i32,
 }
 
 impl SteamClient {
@@ -49,48 +49,14 @@ impl SteamClient {
         let user_stats = client.get_steam_user_stats(user, pipe);
 
         Ok(Self {
-            steam,
+            // steam,
             client: Arc::new(client),
             apps001: Arc::new(apps001),
             apps008: Arc::new(apps008),
             user_stats: Arc::new(user_stats),
-            pipe,
-            user,
+            // pipe,
+            // user,
         })
-    }
-
-    pub fn unload(&mut self) {
-        self.client.release_user(self.pipe, self.user);
-        self.client.release_steam_pipe(self.pipe);
-
-        self.pipe = 0;
-        self.user = 0;
-    }
-
-    pub fn reload(&mut self) -> Result<()> {
-        self.unload();
-
-        let steam = Steam::new()?;
-        let client = steam.get_steam_client()?;
-
-        let pipe = client.create_steam_pipe()?;
-        let user = client.connect_to_global_user(pipe);
-
-        let apps001 = client.get_steam_apps001(user, pipe);
-        let apps008 = client.get_steam_apps008(user, pipe);
-        let user_stats = client.get_steam_user_stats(user, pipe);
-
-        self.steam = steam;
-        self.client = Arc::new(client);
-
-        self.pipe = pipe;
-        self.user = user;
-
-        self.apps001 = Arc::new(apps001);
-        self.apps008 = Arc::new(apps008);
-        self.user_stats = Arc::new(user_stats);
-
-        Ok(())
     }
 }
 
@@ -125,10 +91,6 @@ impl Steam {
 
         Ok(Self { module })
     }
-
-    // fn release_module(&self) {
-    //     unsafe { FreeLibrary(*self.module).expect("Error freeing steamclient.dll") };
-    // }
 
     pub fn get_install_path() -> Result<String> {
         let target = "SOFTWARE\\Valve\\Steam";

@@ -2,7 +2,6 @@ pub mod apps;
 pub mod error;
 pub mod native;
 pub mod steam;
-pub mod user;
 pub mod userstats;
 pub mod worker;
 
