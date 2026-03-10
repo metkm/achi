@@ -1,6 +1,12 @@
 use crate::error::Result;
 
+use gpui::{Context, EventEmitter};
 use interfaces::steam;
+
+#[derive(Debug)]
+pub enum SteamEvent {
+    Initialized,
+}
 
 pub struct SteamState {
     pub client: Result<steam::SteamClient>,
@@ -8,28 +14,27 @@ pub struct SteamState {
 
 impl SteamState {
     pub fn new() -> Self {
-        let client =
-            steam::SteamClient::new().map_err(|error| crate::error::AppError::from(error));
+        let client = steam::SteamClient::new().map_err(|error| crate::error::AppError::from(error));
 
         Self { client }
     }
 
-    pub fn reload(&mut self, id: Option<i32>) {
-        println!("{:?}", id);
+    pub fn reload(cx: &mut Context<Self>) {
+        cx.spawn(async move |this, cx| {
+            this.update(cx, |this, cx| {
+                this.client =
+                    steam::SteamClient::new().map_err(|error| crate::error::AppError::from(error));
 
-        unsafe {
-            match id {
-                Some(id) => {
-                    std::env::set_var("SteamAppId", id.to_string());
-                },
-                None => {
-                    std::env::remove_var("SteamAppId");
+                if this.client.is_ok() {
+                    cx.emit(SteamEvent::Initialized);
                 }
-            }
-        }
 
-        if let Ok(client) = &mut self.client {
-            client.reload().ok();
-        }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
     }
 }
+
+impl EventEmitter<SteamEvent> for SteamState {}

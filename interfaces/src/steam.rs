@@ -65,8 +65,6 @@ impl SteamClient {
 
         self.pipe = 0;
         self.user = 0;
-
-        self.steam.release_module();
     }
 
     pub fn reload(&mut self) -> Result<()> {
@@ -130,9 +128,9 @@ impl Steam {
         })
     }
 
-    fn release_module(&self) {
-        unsafe { FreeLibrary(*self.module).expect("Error freeing steamclient.dll") };
-    }
+    // fn release_module(&self) {
+    //     unsafe { FreeLibrary(*self.module).expect("Error freeing steamclient.dll") };
+    // }
 
     pub fn get_install_path() -> Result<String> {
         let target = "SOFTWARE\\Valve\\Steam";
@@ -166,5 +164,13 @@ impl Steam {
         };
 
         Ok(Interface::<ISteamClient018>::new(address))
+    }
+}
+
+impl Drop for Steam {
+    fn drop(&mut self) {
+        unsafe {
+            FreeLibrary(*self.module).ok();
+        }
     }
 }

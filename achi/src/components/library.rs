@@ -1,28 +1,13 @@
-use crate::error::Result;
-use crate::models;
-use crate::models::achievement::Achievement;
+use crate::{models, models::game::Game};
+
+use crate::api::games::{RequestStatus, get_library};
 use crate::states::steam::SteamState;
-use crate::{
-    api::{
-        games::{RequestStatus, get_library},
-        keyvalue::KeyValue,
-    },
-    error::AppError,
-};
-
-use crate::models::game::Game;
-
-use interfaces::{
-    Interface,
-    native::{steam_apps001::ISteamApps001, steam_apps008::ISteamApps008},
-    steam::{Steam, SteamClient},
-};
 
 use std::sync::Arc;
 
 use gpui::{
-    App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, RenderOnce,
-    Styled, StyledImage, Window, div, img,
+    App, AppContext, Context, Entity, EventEmitter, InteractiveElement, IntoElement, ParentElement,
+    RenderOnce, Styled, StyledImage, Window, div, img,
 };
 
 use gpui_component::{
@@ -34,13 +19,19 @@ use gpui_component::{
 
 use log::error;
 
+#[derive(Clone, Debug)]
+pub enum LibraryEvent {
+    Select(i32),
+}
+
+#[derive(Debug)]
 pub struct LibraryState {
     pub selected: Option<i32>,
     status: RequestStatus,
     input: Entity<InputState>,
     games: Arc<Vec<models::game::Game>>,
     games_filtered: Arc<Vec<models::game::Game>>,
-    steam_entity: Entity<SteamState>,
+    // steam_entity: Entity<SteamState>,
 }
 
 impl LibraryState {
@@ -52,12 +43,12 @@ impl LibraryState {
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search.."));
 
         cx.subscribe_in(&input, window, Self::on_input).detach();
+        cx.subscribe_in(&steam_entity, window, |_, entity, _, _, cx| {
+            LibraryState::fetch_games(entity, cx);
+        })
+        .detach();
 
-        Self::fetch_games(cx, &steam_entity);
-
-        // let _ = cx.observe(&steam_entity, |this, _, cx| {
-        //     this.fetch_games(cx);
-        // });
+        Self::fetch_games(&steam_entity, cx);
 
         Self {
             selected: None,
@@ -65,38 +56,10 @@ impl LibraryState {
             input,
             games: Arc::new(vec![]),
             games_filtered: Arc::new(vec![]),
-            steam_entity,
         }
     }
 
-    // pub fn try_init_clients(cx: &mut Context<Self>) {
-    // cx.spawn(async move |this, cx| {
-    //     // let client = cx
-    //     //     .background_executor()
-    //     //     .spawn(async move { SteamClient::new() })
-    //     //     .await;
-
-    //     let client = match SteamClient::new() {
-    //         Ok(res) => res,
-    //         Err(error) => {
-    //             error!("{error}");
-    //             return;
-    //         }
-    //     };
-
-    //     this.update(cx, |this, cx| {
-    //         this.fetch_games(cx, client.get_apps001(), client.get_apps008())
-    //             .ok();
-    //         this.client = Some(Ok(client));
-
-    //         cx.notify();
-    //     })
-    //     .ok();
-    // })
-    // .detach();
-    // }
-
-    pub fn fetch_games(cx: &mut Context<Self>, steam_entity: &Entity<SteamState>) {
+    pub fn fetch_games(steam_entity: &Entity<SteamState>, cx: &mut Context<Self>) {
         let Ok(ref client) = steam_entity.read(cx).client else {
             return;
         };
@@ -170,102 +133,20 @@ impl LibraryState {
         .detach();
     }
 
-    pub fn load_achievements(this: &mut Self, cx: &mut Context<Self>, game_id: i32) {
-        // let user_stats = this
-        //     .client
-        //     .as_ref()
-        //     .unwrap()
-        //     .as_ref()
-        //     .unwrap()
-        //     .get_user_stats();
-
-        // cx.spawn(async move |this, cx| {
-        //     let results = cx
-        //         .background_executor()
-        //         .spawn(async move {
-        //             let kvt = KeyValue::from_install_path(&Steam::get_install_path()?, game_id)?;
-        //             // let client = SteamClient::new()?;
-
-        //             let achievements = kvt
-        //                 .get_kv_by_name(&game_id.to_string())
-        //                 .and_then(|kv| kv.get_kv_by_name("stats"))
-        //                 .map(|stats| {
-        //                     stats
-        //                         .children
-        //                         .clone()
-        //                         .into_iter()
-        //                         .flat_map(|stat| {
-        //                             stat.children
-        //                                 .into_iter()
-        //                                 .filter(|b| b.name == "bits")
-        //                                 .map(|bits| bits.children)
-        //                         })
-        //                         .flat_map(|bits| {
-        //                             bits.into_iter().filter_map({
-        //                                 let user_stats = user_stats.clone();
-
-        //                                 move |bit| {
-        //                                     models::achievement::Achievement::from_bit_kv(
-        //                                         &bit,
-        //                                         user_stats.clone(),
-        //                                     )
-        //                                 }
-        //                             })
-        //                         })
-        //                         .collect::<Vec<_>>()
-        //                 });
-
-        //             Ok::<Option<Vec<Achievement>>, AppError>(achievements)
-        //         })
-        //         .await;
-
-        //     let achievements = match results {
-        //         Ok(achi) => achi.unwrap_or(vec![]),
-        //         Err(error) => {
-        //             error!("{error}");
-        //             return;
-        //         }
-        //     };
-
-        //     this.update(cx, |this, cx| {
-        //         this.achievements = Arc::new(achievements);
-        //         cx.notify();
-        //     })
-        //     .ok();
-        // })
-        // .detach();
-    }
-
     pub fn select_game(entity: &Entity<Self>, cx: &mut App, game_id: Option<i32>) {
-        // if let Some(id) = game_id {
-        //     unsafe {
-        //         std::env::set_var("SteamAppId", id.to_string());
-        //     };
-        // }
-
         entity.update(cx, |this, cx| {
             this.selected = game_id;
-            
-            this.steam_entity.update(cx, |this, _| {
-                this.reload(game_id);
-            });
 
-            // Self::fetch_games(cx);
-
-            // this.fetch_games(cx);
-
-            // if let Some(Ok(client)) = &mut this.client {
-            //     client.reload().expect("error reloading client");
-            // }
-
-            // if let Some(game_id) = game_id {
-            //     LibraryState::load_achievements(this, cx, game_id);
-            // }
+            if let Some(game_id) = game_id {
+                cx.emit(LibraryEvent::Select(game_id));
+            }
 
             cx.notify();
         })
     }
 }
+
+impl EventEmitter<LibraryEvent> for LibraryState {}
 
 #[derive(IntoElement)]
 pub struct Library {

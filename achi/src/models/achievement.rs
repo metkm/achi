@@ -1,9 +1,9 @@
+use std::sync::{Arc, Mutex};
+
+use interfaces::worker::{self, SteamWorker};
+
 use crate::api::keyvalue::KeyValue;
 
-use interfaces::{Interface, native::steam_userstats::ISteamUserStats013};
-use std::sync::Arc;
-
-#[derive(Debug)]
 pub struct Achievement {
     pub id: String,
     pub name: String,
@@ -14,10 +14,7 @@ pub struct Achievement {
 }
 
 impl Achievement {
-    pub fn from_bit_kv(
-        kv: &KeyValue,
-        user_stats: Arc<Interface<ISteamUserStats013>>,
-    ) -> Option<Achievement> {
+    pub fn from_bit_kv(kv: &KeyValue, worker: Arc<Mutex<SteamWorker>>) -> Option<Achievement> {
         let name_node = kv.get_kv_by_name("name")?;
         let display_node = kv.get_kv_by_name("display")?;
 
@@ -32,16 +29,15 @@ impl Achievement {
         let icon_normal = display_node.get_kv_by_name("icon")?;
         let icon_locked = display_node.get_kv_by_name("icon_gray")?;
 
-        let mut is_achieved = false;
-        let mut unlock_time = 0;
+        let Ok(mut lock) = worker.lock() else {
+            return None;
+        };
 
-        let id_with_null = format!("{}\0", name_node.value);
-
-        // let result = user_stats.get_achievement_and_unlock_time(
-        //     id_with_null.as_ptr() as *const i8,
-        //     &mut is_achieved,
-        //     &mut unlock_time,
-        // );
+        let Ok(result) = lock.send(worker::GetAchievement {
+            id: name_node.value.to_string(),
+        }) else {
+            return None;
+        };
 
         Some(Achievement {
             id: name_node.value.clone(),
@@ -49,7 +45,7 @@ impl Achievement {
             desc: desc.value.clone(),
             icon_normal: icon_normal.value.clone(),
             icon_locked: icon_locked.value.clone(),
-            is_achieved,
+            is_achieved: result.is_achieved,
         })
     }
 }

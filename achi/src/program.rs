@@ -1,11 +1,13 @@
-use crate::components::achievements::Achievements;
-use crate::components::library::{Library, LibraryState};
+use crate::components::achievements::{Achievements, AchievementsState};
+use crate::components::library::{Library, LibraryEvent, LibraryState};
 use crate::states::steam::SteamState;
 
 use gpui::{
     AppContext, Context, Entity, InteractiveElement, ParentElement, Render,
     StatefulInteractiveElement, Styled, Window, div, rgba,
 };
+
+use log::error;
 
 use gpui_component::button::Button;
 use gpui_component::label::Label;
@@ -14,6 +16,7 @@ use gpui_component::{StyledExt, TitleBar};
 pub struct Program {
     library_state: Entity<LibraryState>,
     steam_state: Entity<SteamState>,
+    achievements_state: Entity<AchievementsState>,
 }
 
 impl Program {
@@ -21,9 +24,25 @@ impl Program {
         let steam_state = cx.new(|_| SteamState::new());
         let library_state = cx.new(|cx| LibraryState::new(window, cx, steam_state.clone()));
 
+        let achievements_state = cx.new(|cx| AchievementsState::new(cx));
+        let achievements_state_c = achievements_state.clone();
+
+        let _ = cx
+            .subscribe_in(&library_state, window, move |_, _, event, _, cx| {
+                let LibraryEvent::Select(id) = event;
+
+                achievements_state_c.update(cx, |this, cx| {
+                    if let Err(error) = this.init(*id, cx) {
+                        error!("error initializing worker {error}");
+                    };
+                });
+            })
+            .detach();
+
         Self {
             library_state,
             steam_state,
+            achievements_state: achievements_state,
         }
     }
 }
@@ -49,7 +68,7 @@ impl Render for Program {
                     .child(Button::new("retry").label("Retry").on_click(cx.listener(
                         move |_, _, _, cx| {
                             steam_entity.update(cx, |_, cx| {
-                                // SteamState::try_init(cx);
+                                SteamState::reload(cx);
                             })
                         },
                     )));
@@ -59,7 +78,7 @@ impl Render for Program {
             let library_state = library_entity.read(cx);
 
             div().v_flex().flex_grow().child({
-                let Some(game_id) = library_state.selected else {
+                let Some(_) = library_state.selected else {
                     break 'block div()
                         .v_flex()
                         .flex_grow()
@@ -68,7 +87,7 @@ impl Render for Program {
 
                 div()
                     .v_flex()
-                    .child(Achievements::new(&self.library_state))
+                    .child(Achievements::new(&self.achievements_state))
             })
         };
 

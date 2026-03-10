@@ -13,6 +13,12 @@ pub enum Error {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+
+    #[error("error reading stdout/stdin from worker")]
+    WorkerStdio
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

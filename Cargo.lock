@@ -3137,6 +3137,9 @@ dependencies = [
 name = "interfaces"
 version = "0.1.0"
 dependencies = [
+ "log",
+ "serde",
+ "serde_json",
  "thiserror 2.0.18",
  "windows 0.62.2",
  "winreg",

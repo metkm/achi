@@ -162,4 +162,35 @@ impl KeyValue {
 
         Ok(root)
     }
+
+    pub fn achievements_from_root(kvt: KeyValue, game_id: i32) {
+        // let achievements = kvt
+        //     .get_kv_by_name(&game_id.to_string())
+        //     .and_then(|kv| kv.get_kv_by_name("stats"))
+        //     .map(|stats| {
+        //         stats
+        //             .children
+        //             .clone()
+        //             .into_iter()
+        //             .flat_map(|stat| {
+        //                 stat.children
+        //                     .into_iter()
+        //                     .filter(|b| b.name == "bits")
+        //                     .map(|bits| bits.children)
+        //             })
+        //             .flat_map(|bits| {
+        //                 bits.into_iter().filter_map({
+        //                     let user_stats = user_stats.clone();
+
+        //                     move |bit| {
+        //                         models::achievement::Achievement::from_bit_kv(
+        //                             &bit,
+        //                             user_stats.clone(),
+        //                         )
+        //                     }
+        //                 })
+        //             })
+        //             .collect::<Vec<_>>()
+        //     });
+    }
 }

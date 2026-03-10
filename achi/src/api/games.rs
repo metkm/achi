@@ -9,6 +9,7 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{fs, sync::Arc};
 
+#[derive(Debug)]
 pub enum RequestStatus {
     Idle,
     Pending,
