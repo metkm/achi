@@ -27,35 +27,35 @@ use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 #[derive(Clone, Debug)]
 pub struct SteamClient {
-    // steam: Steam,
+    _steam: Steam,
     pub client: Arc<Interface<ISteamClient018>>,
     pub apps001: Arc<Interface<ISteamApps001>>,
     pub apps008: Arc<Interface<ISteamApps008>>,
     pub user_stats: Arc<Interface<ISteamUserStats013>>,
-    // pipe: i32,
-    // user: i32,
+    _pipe: i32,
+    _user: i32,
 }
 
 impl SteamClient {
     pub fn new() -> Result<Self> {
-        let steam = Steam::new()?;
-        let client = steam.get_steam_client()?;
+        let _steam = Steam::new()?;
+        let client = _steam.get_steam_client()?;
 
-        let pipe = client.create_steam_pipe()?;
-        let user = client.connect_to_global_user(pipe);
+        let _pipe = client.create_steam_pipe()?;
+        let _user = client.connect_to_global_user(_pipe);
 
-        let apps001 = client.get_steam_apps001(user, pipe);
-        let apps008 = client.get_steam_apps008(user, pipe);
-        let user_stats = client.get_steam_user_stats(user, pipe);
+        let apps001 = client.get_steam_apps001(_user, _pipe);
+        let apps008 = client.get_steam_apps008(_user, _pipe);
+        let user_stats = client.get_steam_user_stats(_user, _pipe);
 
         Ok(Self {
-            // steam,
+            _steam,
             client: Arc::new(client),
             apps001: Arc::new(apps001),
             apps008: Arc::new(apps008),
             user_stats: Arc::new(user_stats),
-            // pipe,
-            // user,
+            _pipe,
+            _user,
         })
     }
 }
