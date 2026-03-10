@@ -87,6 +87,8 @@ impl Render for Program {
 
                 div()
                     .v_flex()
+                    .flex_grow()
+                    .gap_2()
                     .child(
                         Button::new("back")
                             .label("Go Back")

@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use gpui::{Context, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
-use gpui_component::{StyledExt, checkbox::Checkbox};
+use gpui_component::{StyledExt, switch::Switch};
 
 use interfaces::{steam::Steam, worker::SteamWorker};
 use log::error;
@@ -119,11 +119,13 @@ impl RenderOnce for Achievements {
 
         div()
             .v_flex()
+            .flex_grow()
             .gap_2()
             .children(state.achievements.iter().map(|achi| {
                 div()
                     .flex()
                     .items_center()
+                    .w_full()
                     .gap_2()
                     .child(
                         img(format!(
@@ -138,12 +140,15 @@ impl RenderOnce for Achievements {
                         div()
                             .flex()
                             .justify_between()
+                            .flex_grow()
+                            .items_center()
+                            .p_2()
                             .child(
                                 div()
                                     .child(achi.name.clone())
                                     .child(div().child(achi.desc.clone()).text_sm()),
                             )
-                            .child(Checkbox::new("is_achieved").checked(achi.is_achieved)),
+                            .child(Switch::new("is_achieved").checked(achi.is_achieved)),
                     )
             }))
     }
