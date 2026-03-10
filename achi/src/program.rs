@@ -93,18 +93,17 @@ impl Render for Program {
                     .v_flex()
                     .size_full()
                     .gap_2()
-                    .child(
-                        Button::new("back").label("Go Back").on_click(cx.listener(
-                            move |_, _, _, cx| {
-                                LibraryState::select_game(&library_entity, cx, None);
-                            },
+                    .child(Button::new("back").label("Go Back").on_click(cx.listener(
+                        move |_, _, _, cx| {
+                            LibraryState::select_game(&library_entity, cx, None);
+                        },
                     )))
                     .child(
                         div()
                             .id("achievements-content")
                             .overflow_scroll()
                             .flex_1()
-                            .child(Achievements::new(&self.achievements_state))
+                            .child(Achievements::new(&self.achievements_state)),
                     )
             })
         };

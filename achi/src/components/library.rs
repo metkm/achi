@@ -10,6 +10,7 @@ use gpui::{
     RenderOnce, Styled, StyledImage, Window, div, img,
 };
 
+use gpui_component::Icon;
 use gpui_component::{
     ActiveTheme, IconName, PixelsExt, Sizable, StyledExt,
     input::{Input, InputEvent, InputState},
@@ -198,7 +199,12 @@ impl RenderOnce for Library {
         div()
             .v_flex()
             .gap_2()
-            .child(Input::new(&state.input).w_96())
+            .child(
+                Input::new(&state.input)
+                    .cleanable(true)
+                    .w_96()
+                    .prefix(Icon::new(IconName::Search).small()),
+            )
             .child(
                 div()
                     .grid()
@@ -217,16 +223,6 @@ impl RenderOnce for Library {
                             .hover(|this| this.bg(cx.theme().muted))
                             .on_mouse_down(gpui::MouseButton::Left, move |_, _, cx| {
                                 LibraryState::select_game(&entity, cx, Some(game_id));
-
-                                // entity.update(cx, |this, cx| {
-                                //     this.selected = Some(game_id);
-
-                                // if let Ok(clients) = &this.clients {
-                                //     let user_stats = clients.user_stats.clone();
-                                //     this.get_achievements(cx, game_id, user_stats);
-                                // };
-
-                                // });
                             })
                             .child(
                                 img.w_full()
