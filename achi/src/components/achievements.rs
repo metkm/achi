@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
 use gpui_component::{StyledExt, switch::Switch};
 
-use interfaces::{steam::Steam, worker::SteamWorker};
+use interfaces::{steam::Steam, worker::Cmd, worker::SteamWorker};
 use log::error;
 
 use crate::{
@@ -115,13 +115,16 @@ impl Achievements {
 
 impl RenderOnce for Achievements {
     fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
-        let state = self.state.read(cx);
+        let entity = self.state;
+        let state = entity.read(cx);
 
         div()
             .v_flex()
             .flex_grow()
             .gap_2()
             .children(state.achievements.iter().map(|achi| {
+                let entity = entity.clone();
+
                 div()
                     .flex()
                     .items_center()
@@ -131,7 +134,11 @@ impl RenderOnce for Achievements {
                         img(format!(
                             "https://cdn.steamstatic.com/steamcommunity/public/images/apps/{}/{}",
                             state.game_id.unwrap_or(3450310),
-                            if achi.is_achieved { &achi.icon_normal } else { &achi.icon_locked }
+                            if achi.is_achieved {
+                                &achi.icon_normal
+                            } else {
+                                &achi.icon_locked
+                            }
                         ))
                         .rounded_md()
                         .size_24(),
@@ -148,7 +155,41 @@ impl RenderOnce for Achievements {
                                     .child(achi.name.clone())
                                     .child(div().child(achi.desc.clone()).text_sm()),
                             )
-                            .child(Switch::new(ElementId::Name(format!("{}_enabled", achi.id).into())).checked(achi.is_achieved)),
+                            .child(
+                                Switch::new(ElementId::Name(format!("{}_enabled", achi.id).into()))
+                                    .checked(achi.is_achieved)
+                                    .on_click({
+                                        let achi_id = achi.id.clone();
+
+                                        move |checked, _, cx| {
+                                            entity.update(cx, |state, _cx| {
+                                                if let Some(achi) = state
+                                                    .achievements
+                                                    .iter_mut()
+                                                    .find(|a| a.id == achi_id)
+                                                {
+                                                    achi.is_achieved = *checked;
+                                                }
+
+                                                if let Some(worker) = &state.worker
+                                                    && let Ok(mut lock) = worker.lock()
+                                                {
+                                                    if *checked {
+                                                        lock.send::<bool>(Cmd::SetAchievement(
+                                                            achi_id.clone(),
+                                                        ))
+                                                        .ok();
+                                                    } else {
+                                                        lock.send::<bool>(Cmd::ClearAchievement(
+                                                            achi_id.clone(),
+                                                        ))
+                                                        .ok();
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }),
+                            ),
                     )
             }))
     }

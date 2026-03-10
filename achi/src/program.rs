@@ -27,17 +27,16 @@ impl Program {
         let achievements_state = cx.new(AchievementsState::new);
         let achievements_state_c = achievements_state.clone();
 
-        cx
-            .subscribe_in(&library_state, window, move |_, _, event, _, cx| {
-                let LibraryEvent::Select(id) = event;
+        cx.subscribe_in(&library_state, window, move |_, _, event, _, cx| {
+            let LibraryEvent::Select(id) = event;
 
-                achievements_state_c.update(cx, |this, cx| {
-                    if let Err(error) = this.init(*id, cx) {
-                        error!("error initializing worker {error}");
-                    };
-                });
-            })
-            .detach();
+            achievements_state_c.update(cx, |this, cx| {
+                if let Err(error) = this.init(*id, cx) {
+                    error!("error initializing worker {error}");
+                };
+            });
+        })
+        .detach();
 
         Self {
             library_state,
@@ -89,16 +88,14 @@ impl Render for Program {
                     .v_flex()
                     .flex_grow()
                     .gap_2()
-                    .child(
-                        Button::new("back")
-                            .label("Go Back")
-                            .on_click(cx.listener(move |_, _, _, cx| {
-                                library_entity.update(cx, |this, cx| {
-                                    this.selected = None;
-                                    cx.notify();
-                                })
-                            }))
-                    )
+                    .child(Button::new("back").label("Go Back").on_click(cx.listener(
+                        move |_, _, _, cx| {
+                            library_entity.update(cx, |this, cx| {
+                                this.selected = None;
+                                cx.notify();
+                            })
+                        },
+                    )))
                     .child(Achievements::new(&self.achievements_state))
             })
         };

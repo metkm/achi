@@ -65,6 +65,24 @@ fn main() -> anyhow::Result<()> {
                 let response = GetAchievementResponse { is_achieved };
                 writeln!(writer, "{}", serde_json::to_string(&response).unwrap()).ok();
             }
+            Cmd::SetAchievement(id) => {
+                let c_id = std::ffi::CString::new(id).expect("Invalid ID");
+
+                unsafe {
+                    user_stats.set_achievement(c_id.as_ptr());
+                };
+
+                writeln!(writer, "true").ok();
+            }
+            Cmd::ClearAchievement(id) => {
+                let c_id = std::ffi::CString::new(id).expect("Invalid ID");
+
+                unsafe {
+                    user_stats.clear_achievement(c_id.as_ptr());
+                };
+
+                writeln!(writer, "true").ok();
+            }
         }
 
         writer.flush().unwrap();

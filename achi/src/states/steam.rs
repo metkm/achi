@@ -22,8 +22,7 @@ impl SteamState {
     pub fn reload(cx: &mut Context<Self>) {
         cx.spawn(async move |this, cx| {
             this.update(cx, |this, cx| {
-                this.client =
-                    steam::SteamClient::new().map_err(crate::error::AppError::from);
+                this.client = steam::SteamClient::new().map_err(crate::error::AppError::from);
 
                 if this.client.is_ok() {
                     cx.emit(SteamEvent::Initialized);

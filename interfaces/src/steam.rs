@@ -123,9 +123,7 @@ impl Steam {
             })?
         };
 
-        Ok(Self {
-            module,
-        })
+        Ok(Self { module })
     }
 
     // fn release_module(&self) {

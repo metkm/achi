@@ -7,10 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::Result;
 
-pub trait WorkerMessage: Serialize + DeserializeOwned {
-    type Response: DeserializeOwned + Serialize;
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetAchievement {
     pub id: String,
@@ -21,13 +17,11 @@ pub struct GetAchievementResponse {
     pub is_achieved: bool,
 }
 
-impl WorkerMessage for GetAchievement {
-    type Response = GetAchievementResponse;
-}
-
 #[derive(Serialize, Deserialize)]
 pub enum Cmd {
     GetAchievement(GetAchievement),
+    SetAchievement(String),
+    ClearAchievement(String),
 }
 
 pub struct SteamWorker {
