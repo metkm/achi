@@ -96,7 +96,7 @@ impl SteamClient {
 
 #[derive(Clone, Debug)]
 pub struct Steam {
-    pub module: Arc<HMODULE>,
+    pub module: HMODULE,
 }
 
 impl Steam {
@@ -124,7 +124,7 @@ impl Steam {
         };
 
         Ok(Self {
-            module: Arc::new(module),
+            module,
         })
     }
 
@@ -146,7 +146,7 @@ impl Steam {
 
     pub fn get_export_function<T>(&self, name: &str) -> Option<T> {
         let pc = PCSTR(name.as_ptr());
-        let fnc = unsafe { GetProcAddress(*self.module, pc)? };
+        let fnc = unsafe { GetProcAddress(self.module, pc)? };
 
         unsafe { std::mem::transmute_copy(&fnc) }
     }
@@ -170,7 +170,7 @@ impl Steam {
 impl Drop for Steam {
     fn drop(&mut self) {
         unsafe {
-            FreeLibrary(*self.module).ok();
+            FreeLibrary(self.module).ok();
         }
     }
 }

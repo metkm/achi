@@ -4,15 +4,15 @@ use std::ffi::{c_char, c_uint};
 use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamUserStats013> {
-    pub fn set_achievement(&self, id: *const c_char) -> bool {
+    pub unsafe fn set_achievement(&self, id: *const c_char) -> bool {
         unsafe { (self.vtable.set_achievement)(self.address.load(SeqCst), id) }
     }
 
-    pub fn clear_achievement(&self, id: *const c_char) -> bool {
+    pub unsafe fn clear_achievement(&self, id: *const c_char) -> bool {
         unsafe { (self.vtable.clear_achievement)(self.address.load(SeqCst), id) }
     }
 
-    pub fn get_achievement_and_unlock_time(
+    pub unsafe fn get_achievement_and_unlock_time(
         &self,
         id: *const c_char,
         is_achieved: &mut bool,

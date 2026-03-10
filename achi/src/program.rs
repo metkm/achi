@@ -24,10 +24,10 @@ impl Program {
         let steam_state = cx.new(|_| SteamState::new());
         let library_state = cx.new(|cx| LibraryState::new(window, cx, steam_state.clone()));
 
-        let achievements_state = cx.new(|cx| AchievementsState::new(cx));
+        let achievements_state = cx.new(AchievementsState::new);
         let achievements_state_c = achievements_state.clone();
 
-        let _ = cx
+        cx
             .subscribe_in(&library_state, window, move |_, _, event, _, cx| {
                 let LibraryEvent::Select(id) = event;
 
@@ -42,7 +42,7 @@ impl Program {
         Self {
             library_state,
             steam_state,
-            achievements_state: achievements_state,
+            achievements_state,
         }
     }
 }
@@ -87,6 +87,16 @@ impl Render for Program {
 
                 div()
                     .v_flex()
+                    .child(
+                        Button::new("back")
+                            .label("Go Back")
+                            .on_click(cx.listener(move |_, _, _, cx| {
+                                library_entity.update(cx, |this, cx| {
+                                    this.selected = None;
+                                    cx.notify();
+                                })
+                            }))
+                    )
                     .child(Achievements::new(&self.achievements_state))
             })
         };

@@ -54,11 +54,13 @@ fn main() -> anyhow::Result<()> {
 
                 let c_id = std::ffi::CString::new(id).expect("Invalid ID");
 
-                user_stats.get_achievement_and_unlock_time(
-                    c_id.as_ptr(),
-                    &mut is_achieved,
-                    &mut unlock_time,
-                );
+                unsafe {
+                    user_stats.get_achievement_and_unlock_time(
+                        c_id.as_ptr(),
+                        &mut is_achieved,
+                        &mut unlock_time,
+                    );
+                };
 
                 let response = GetAchievementResponse { is_achieved };
                 writeln!(writer, "{}", serde_json::to_string(&response).unwrap()).ok();

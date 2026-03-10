@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use gpui::{Context, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
-use gpui_component::{StyledExt, button::Button, checkbox::Checkbox};
+use gpui_component::{StyledExt, checkbox::Checkbox};
 
 use interfaces::{steam::Steam, worker::SteamWorker};
 use log::error;
@@ -116,38 +116,10 @@ impl Achievements {
 impl RenderOnce for Achievements {
     fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
         let state = self.state.read(cx);
-        // let entity = self.state.clone();
-
-        if state.achievements.is_empty() {
-            return div().m_auto().child("Achievements are empty!").child(
-                Button::new("clear_achievements")
-                    .label("Go Back")
-                    .on_click(move |_, _, cx| {
-                        // LibraryState::select_game(&entity, cx, None);
-
-                        // entity.update(cx, |this, cx| {
-                        //     this.selected = None;
-                        //     cx.notify();
-                        // });
-                    }),
-            );
-        }
 
         div()
             .v_flex()
             .gap_2()
-            .child(
-                Button::new("clear_achievements_a")
-                    .label("Go Back")
-                    .on_click(move |_, _, cx| {
-                        // LibraryState::select_game(&entity, cx, None);
-
-                        // entity.update(cx, |this, cx| {
-                        //     this.selected = None;
-                        //     cx.notify();
-                        // });
-                    }),
-            )
             .children(state.achievements.iter().map(|achi| {
                 div()
                     .flex()
@@ -157,7 +129,7 @@ impl RenderOnce for Achievements {
                         img(format!(
                             "https://cdn.steamstatic.com/steamcommunity/public/images/apps/{}/{}",
                             state.game_id.unwrap_or(3450310),
-                            achi.icon_normal
+                            if achi.is_achieved { &achi.icon_normal } else { &achi.icon_locked }
                         ))
                         .rounded_md()
                         .size_24(),

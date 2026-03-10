@@ -14,7 +14,7 @@ pub struct SteamState {
 
 impl SteamState {
     pub fn new() -> Self {
-        let client = steam::SteamClient::new().map_err(|error| crate::error::AppError::from(error));
+        let client = steam::SteamClient::new().map_err(crate::error::AppError::from);
 
         Self { client }
     }
@@ -23,7 +23,7 @@ impl SteamState {
         cx.spawn(async move |this, cx| {
             this.update(cx, |this, cx| {
                 this.client =
-                    steam::SteamClient::new().map_err(|error| crate::error::AppError::from(error));
+                    steam::SteamClient::new().map_err(crate::error::AppError::from);
 
                 if this.client.is_ok() {
                     cx.emit(SteamEvent::Initialized);
