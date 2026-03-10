@@ -17,7 +17,7 @@ use gpui_component::{
     spinner::Spinner,
 };
 
-use log::error;
+use log::{error, info};
 
 #[derive(Clone, Debug)]
 pub enum LibraryEvent {
@@ -31,7 +31,6 @@ pub struct LibraryState {
     input: Entity<InputState>,
     games: Arc<Vec<models::game::Game>>,
     games_filtered: Arc<Vec<models::game::Game>>,
-    // steam_entity: Entity<SteamState>,
 }
 
 impl LibraryState {
@@ -136,6 +135,7 @@ impl LibraryState {
     pub fn select_game(entity: &Entity<Self>, cx: &mut App, game_id: Option<i32>) {
         entity.update(cx, |this, cx| {
             this.selected = game_id;
+            info!("Selected game with id {:?}", game_id);
 
             cx.emit(LibraryEvent::Select(game_id));
             cx.notify();

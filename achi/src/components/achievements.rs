@@ -1,16 +1,17 @@
+use crate::{
+    api::keyvalue::KeyValue,
+    error::{AppError, Result},
+    models::achievement::Achievement,
+};
+
 use std::sync::{Arc, Mutex};
 
 use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
 use gpui_component::{StyledExt, switch::Switch};
 
 use interfaces::{steam::Steam, worker::Cmd, worker::SteamWorker};
-use log::error;
 
-use crate::{
-    api::keyvalue::KeyValue,
-    error::{AppError, Result},
-    models::achievement::Achievement,
-};
+use log::{error, info};
 
 pub struct AchievementsState {
     worker: Option<Arc<Mutex<SteamWorker>>>,
@@ -28,6 +29,8 @@ impl AchievementsState {
     }
 
     pub fn init(&mut self, game_id: i32, cx: &mut Context<Self>) -> Result<()> {
+        info!("Starting worker process for game id {:?}", game_id);
+
         let worker = SteamWorker::new(game_id)?;
 
         self.worker = Some(Arc::new(Mutex::new(worker)));
@@ -39,9 +42,13 @@ impl AchievementsState {
     }
 
     pub fn stop(&mut self, cx: &mut Context<Self>) {
-        if let Some(worker) = &self.worker && let Ok(mut lock) = worker.lock() {
+        if let Some(worker) = &self.worker
+            && let Ok(mut lock) = worker.lock()
+        {
             lock.child.kill().expect("Unable to kill worker");
         }
+
+        info!("Killed worker process for game id {:?}", self.game_id);
 
         self.worker = None;
         self.achievements = vec![];
@@ -58,6 +65,8 @@ impl AchievementsState {
         let worker = worker.clone();
 
         cx.spawn(async move |this, cx| {
+            info!("Loading achievements for {game_id}");
+
             let results = cx
                 .background_executor()
                 .spawn(async move {
@@ -97,7 +106,7 @@ impl AchievementsState {
             let achievements = match results {
                 Ok(achi) => achi.unwrap_or(vec![]),
                 Err(error) => {
-                    error!("{error}");
+                    error!("Failed to load achievements: {error}");
                     return;
                 }
             };
@@ -187,15 +196,23 @@ impl RenderOnce for Achievements {
                                                     && let Ok(mut lock) = worker.lock()
                                                 {
                                                     if *checked {
-                                                        lock.send::<bool>(Cmd::SetAchievement(
-                                                            achi_id.clone(),
-                                                        ))
-                                                        .ok();
+                                                        match lock.send::<bool>(Cmd::SetAchievement(achi_id.clone())) {
+                                                            Ok(_) => {
+                                                                info!("Enabled achievement {achi_id}")
+                                                            },
+                                                            Err(error) => {
+                                                                error!("Failed to enable achievement: {error}");
+                                                            }
+                                                        }
                                                     } else {
-                                                        lock.send::<bool>(Cmd::ClearAchievement(
-                                                            achi_id.clone(),
-                                                        ))
-                                                        .ok();
+                                                        match lock.send::<bool>(Cmd::ClearAchievement(achi_id.clone())) {
+                                                            Ok(_) => {
+                                                                info!("Disabled achievement {achi_id}")
+                                                            },
+                                                            Err(error) => {
+                                                                error!("Failed to disable achievement: {error}");
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             });

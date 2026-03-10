@@ -37,7 +37,7 @@ impl Program {
                 };
 
                 if let Err(error) = this.init(id, cx) {
-                    error!("error initializing worker {error}");
+                    error!("Error initializing worker: {error}");
                 };
             });
         })
