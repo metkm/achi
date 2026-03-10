@@ -19,7 +19,7 @@ pub struct AchievementsState {
 }
 
 impl AchievementsState {
-    pub fn new(_cx: &mut Context<Self>) -> Self {
+    pub fn new() -> Self {
         Self {
             worker: None,
             achievements: vec![],
@@ -36,6 +36,18 @@ impl AchievementsState {
         self.load_achievements(game_id, cx);
         cx.notify();
         Ok(())
+    }
+
+    pub fn stop(&mut self, cx: &mut Context<Self>) {
+        if let Some(worker) = &self.worker && let Ok(mut lock) = worker.lock() {
+            lock.child.kill().expect("Unable to kill worker");
+        }
+
+        self.worker = None;
+        self.achievements = vec![];
+        self.game_id = None;
+
+        cx.notify();
     }
 
     pub fn load_achievements(&mut self, game_id: i32, cx: &mut Context<Self>) {

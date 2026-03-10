@@ -25,7 +25,7 @@ pub enum Cmd {
 }
 
 pub struct SteamWorker {
-    _child: Child,
+    pub child: Child,
     pub stdin: ChildStdin,
     pub reader: BufReader<ChildStdout>,
 }
@@ -37,14 +37,13 @@ impl SteamWorker {
             .arg(id.to_string())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            // .stderr(Stdio::piped())
             .spawn()?;
 
         let stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
 
         Ok(Self {
-            _child: child,
+            child,
             stdin,
             reader: BufReader::new(stdout),
         })

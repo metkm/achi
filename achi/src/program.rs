@@ -24,14 +24,19 @@ impl Program {
         let steam_state = cx.new(|_| SteamState::new());
         let library_state = cx.new(|cx| LibraryState::new(window, cx, steam_state.clone()));
 
-        let achievements_state = cx.new(AchievementsState::new);
+        let achievements_state = cx.new(|_| AchievementsState::new());
         let achievements_state_c = achievements_state.clone();
 
         cx.subscribe_in(&library_state, window, move |_, _, event, _, cx| {
             let LibraryEvent::Select(id) = event;
 
             achievements_state_c.update(cx, |this, cx| {
-                if let Err(error) = this.init(*id, cx) {
+                let Some(id) = *id else {
+                    this.stop(cx);
+                    return;
+                };
+
+                if let Err(error) = this.init(id, cx) {
                     error!("error initializing worker {error}");
                 };
             });
@@ -90,10 +95,7 @@ impl Render for Program {
                     .gap_2()
                     .child(Button::new("back").label("Go Back").on_click(cx.listener(
                         move |_, _, _, cx| {
-                            library_entity.update(cx, |this, cx| {
-                                this.selected = None;
-                                cx.notify();
-                            })
+                            LibraryState::select_game(&library_entity, cx, None);
                         },
                     )))
                     .child(Achievements::new(&self.achievements_state))

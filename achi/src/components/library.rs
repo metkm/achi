@@ -21,7 +21,7 @@ use log::error;
 
 #[derive(Clone, Debug)]
 pub enum LibraryEvent {
-    Select(i32),
+    Select(Option<i32>),
 }
 
 #[derive(Debug)]
@@ -137,10 +137,7 @@ impl LibraryState {
         entity.update(cx, |this, cx| {
             this.selected = game_id;
 
-            if let Some(game_id) = game_id {
-                cx.emit(LibraryEvent::Select(game_id));
-            }
-
+            cx.emit(LibraryEvent::Select(game_id));
             cx.notify();
         })
     }
