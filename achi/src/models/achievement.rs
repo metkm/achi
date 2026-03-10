@@ -5,7 +5,7 @@ use interfaces::worker::{self, Cmd, SteamWorker};
 use crate::api::keyvalue::KeyValue;
 
 pub struct Achievement {
-    // pub id: String,
+    pub id: String,
     pub name: String,
     pub desc: String,
     pub icon_normal: String,
@@ -42,7 +42,7 @@ impl Achievement {
         };
 
         Some(Achievement {
-            // id: name_node.value.clone(),
+            id: name_node.value.clone(),
             name: name.value.clone(),
             desc: desc.value.clone(),
             icon_normal: icon_normal.value.clone(),

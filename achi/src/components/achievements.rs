@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use gpui::{Context, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
+use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
 use gpui_component::{StyledExt, switch::Switch};
 
 use interfaces::{steam::Steam, worker::SteamWorker};
@@ -148,7 +148,7 @@ impl RenderOnce for Achievements {
                                     .child(achi.name.clone())
                                     .child(div().child(achi.desc.clone()).text_sm()),
                             )
-                            .child(Switch::new("is_achieved").checked(achi.is_achieved)),
+                            .child(Switch::new(ElementId::Name(format!("{}_enabled", achi.id).into())).checked(achi.is_achieved)),
                     )
             }))
     }
