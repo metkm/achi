@@ -162,7 +162,7 @@ impl Steam {
     }
 
     pub fn run_callbacks(&mut self, pipe: i32) {
-        let mut cb_msg = unsafe { std::mem::zeroed() };
+        let mut cb_msg = CallbackMessage::default();
         info!("Running callbacks");
 
         unsafe {
