@@ -5,6 +5,7 @@ pub mod native;
 pub mod steam;
 pub mod userstats;
 pub mod worker;
+pub mod constants;
 
 use native::VTable;
 use std::{ffi::c_int, sync::atomic::AtomicPtr};

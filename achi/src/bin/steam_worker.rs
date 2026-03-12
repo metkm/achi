@@ -1,17 +1,16 @@
 use std::{
     cell::RefCell,
     io::{BufRead, BufReader, BufWriter, Write},
-    rc::Rc,
+    rc::Rc, time::{Duration, Instant},
 };
 
+use anyhow::bail;
 use clap::Parser;
 use interfaces::{
-    callbacks::user_stats_received::{Callback, UserStatsReceivedT},
-    steam::Steam,
-    worker::{Cmd, GetAchievement, GetAchievementResponse},
+    callbacks::user_stats_received::{Callback, UserStatsReceivedT}, constants::USER_STATS_RECEIVED_ID, steam::Steam, worker::{Cmd, GetAchievement, GetAchievementResponse}
 };
 
-use log::{debug, info};
+use log::{debug, info, error};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -43,7 +42,7 @@ fn main() -> anyhow::Result<()> {
     let received_user_stats = Rc::new(RefCell::new(false));
 
     let stats_received_callback: Callback<UserStatsReceivedT> = Callback {
-        id: 1101,
+        id: USER_STATS_RECEIVED_ID,
         is_server: false,
         on_run: {
             let received_user_stats = Rc::clone(&received_user_stats);
@@ -60,7 +59,15 @@ fn main() -> anyhow::Result<()> {
     unsafe { user_stats.request_userstats() };
     info!("Requested user results.");
 
+    let timeout = Duration::from_secs(3);
+    let start = Instant::now();
+
     while !*received_user_stats.borrow() {
+        if start.elapsed() > timeout {
+            error!("Receive user stats timeout");
+            bail!("Receive user stats timeout");
+        }
+
         steam.run_callbacks(pipe);
         std::thread::sleep(std::time::Duration::from_millis(200));
     }

@@ -1,0 +1,1 @@
+pub const USER_STATS_RECEIVED_ID: i32 = 1101;
