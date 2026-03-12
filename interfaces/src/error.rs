@@ -10,6 +10,8 @@ pub enum Error {
     UnableToReadRegistry(String),
     #[error("Unable to create steam interface")]
     UnableToCreateInterface,
+    #[error("Unable to create steam callback")]
+    UnableToCreateCallback,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

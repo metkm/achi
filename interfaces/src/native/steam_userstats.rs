@@ -1,6 +1,7 @@
 use super::CallableDefaultNativeFunction;
 use super::VTable;
 
+use std::ffi::c_ulonglong;
 use std::ffi::{c_char, c_int, c_uint};
 
 #[repr(C)]
@@ -29,7 +30,10 @@ pub struct ISteamUserStats013Functions {
     pub indicate_achievement_progress: CallableDefaultNativeFunction,
     pub get_num_achievements: CallableDefaultNativeFunction,
     pub get_achievement_name: CallableDefaultNativeFunction,
-    pub request_user_stats: CallableDefaultNativeFunction,
+
+    // pub request_user_stats: CallableDefaultNativeFunction,
+    pub request_user_stats: unsafe extern "C" fn(this: *mut c_int, steam_id: c_ulonglong) -> c_int,
+
     pub get_user_stat_float: CallableDefaultNativeFunction,
     pub get_user_stat_int: CallableDefaultNativeFunction,
     pub get_user_achievement: CallableDefaultNativeFunction,

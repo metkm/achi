@@ -1,6 +1,6 @@
 use super::{Interface, native::steam_userstats::ISteamUserStats013};
 
-use std::ffi::{c_char, c_uint};
+use std::ffi::{c_char, c_int, c_uint};
 use std::sync::atomic::Ordering::SeqCst;
 
 impl Interface<ISteamUserStats013> {
@@ -26,5 +26,9 @@ impl Interface<ISteamUserStats013> {
                 unlock_time,
             )
         }
+    }
+
+    pub unsafe fn request_userstats(&self) -> c_int {
+        unsafe { (self.vtable.request_user_stats)(self.address.load(SeqCst), 76561198261085683) }
     }
 }

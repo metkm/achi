@@ -1,20 +1,24 @@
-use crate::error::{Error, Result};
+use crate::{
+    callbacks::{CallbackMessage, GetCallbackFn, user_stats_received::ICallback},
+    error::{Error, Result},
+};
 
 use std::{
-    ffi::{CString, c_void},
+    ffi::{CString, c_int, c_void},
     os::windows::ffi::OsStrExt,
     path::Path,
     sync::Arc,
 };
 
 use super::{
-    CreateInterfaceFn, Interface,
+    Interface,
     native::{
-        steam_apps001::ISteamApps001, steam_apps008::ISteamApps008, steam_client::ISteamClient018,
-        steam_userstats::ISteamUserStats013,
+        CreateInterfaceFn, steam_apps001::ISteamApps001, steam_apps008::ISteamApps008,
+        steam_client::ISteamClient018, steam_userstats::ISteamUserStats013,
     },
 };
 
+use log::info;
 use windows::{
     Win32::{
         Foundation::{FreeLibrary, HMODULE},
@@ -25,7 +29,6 @@ use windows::{
 
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
-#[derive(Clone, Debug)]
 pub struct SteamClient {
     _steam: Steam,
     pub client: Arc<Interface<ISteamClient018>>,
@@ -60,9 +63,9 @@ impl SteamClient {
     }
 }
 
-#[derive(Clone, Debug)]
 pub struct Steam {
     pub module: HMODULE,
+    pub callbacks: Vec<Box<dyn ICallback>>,
 }
 
 impl Steam {
@@ -89,7 +92,10 @@ impl Steam {
             })?
         };
 
-        Ok(Self { module })
+        Ok(Self {
+            module,
+            callbacks: vec![],
+        })
     }
 
     pub fn get_install_path() -> Result<String> {
@@ -124,6 +130,55 @@ impl Steam {
         };
 
         Ok(Interface::<ISteamClient018>::new(address))
+    }
+
+    pub fn get_callback(
+        &self,
+        pipe: c_int,
+        message: *mut  CallbackMessage,
+        call: &mut c_int,
+    ) -> Result<bool> {
+        let _get_callback = self
+            .get_export_function::<GetCallbackFn>("Steam_BGetCallback\0")
+            .ok_or(Error::UnableToCreateCallback)?;
+
+        let result = unsafe { _get_callback(pipe, message, call) };
+
+        Ok(result)
+    }
+
+    pub fn register_callback<C>(&mut self, cb: C)
+    where
+        C: ICallback + 'static,
+    {
+        self.callbacks.push(Box::new(cb));
+    }
+
+    pub fn run_callbacks(&self, pipe: i32) {
+        // let message_ptr: *mut CallbackMessage = std::ptr::null_mut();
+        let mut message = CallbackMessage::default();
+        info!("running callbacks {}", self.callbacks.len());
+
+        let mut call = 0;
+
+        while self
+            .get_callback(pipe, &mut message, &mut call)
+            .unwrap_or(false)
+        {
+            // let message = unsafe { message_ptr.read() };
+            let id = unsafe { std::ptr::addr_of!(message.id).read_unaligned() };
+
+            for cb in &self.callbacks {
+                let msg_id = id;
+                info!("cb id {} msg id {} call {}", cb.id(), msg_id, call);
+
+                if cb.id() != message.id {
+                    continue;
+                }
+
+                cb.run(message.param_pointer);
+            }
+        }
     }
 }
 
