@@ -35,7 +35,7 @@ pub fn init(cx: &mut App) {
 
 fn main() {
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Debug)
         .init();
 
     let client = app::http_client::ReqwestHttpClient::new().unwrap();

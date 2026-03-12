@@ -1,5 +1,6 @@
 use crate::{
     api::keyvalue::KeyValue,
+    components,
     error::{AppError, Result},
     models::achievement::Achievement,
 };
@@ -31,13 +32,30 @@ impl AchievementsState {
     pub fn init(&mut self, game_id: i32, cx: &mut Context<Self>) -> Result<()> {
         info!("Starting worker process for game id {:?}", game_id);
 
-        let worker = SteamWorker::new(game_id)?;
+        cx.spawn(async move |this, cx| {
+            let worker = cx
+                .background_executor()
+                .spawn(async move { SteamWorker::new(game_id) })
+                .await;
 
-        self.worker = Some(Arc::new(Mutex::new(worker)));
-        self.game_id = Some(game_id);
+            let worker = match worker {
+                Ok(w) => w,
+                Err(error) => {
+                    error!("Error creating worker! {}", error);
+                    return;
+                }
+            };
 
-        self.load_achievements(game_id, cx);
-        cx.notify();
+            this.update(cx, |this, cx| {
+                this.worker = Some(Arc::new(Mutex::new(worker)));
+                this.game_id = Some(game_id);
+
+                cx.notify();
+                this.load_achievements(game_id, cx);
+            })
+            .ok();
+        })
+        .detach();
         Ok(())
     }
 
@@ -139,6 +157,10 @@ impl RenderOnce for Achievements {
         let entity = self.state;
         let state = entity.read(cx);
 
+        if state.worker.is_none() {
+            return components::loading::Loading.into_any_element();
+        }
+
         div()
             .v_flex()
             .flex_grow()
@@ -220,6 +242,6 @@ impl RenderOnce for Achievements {
                                     }),
                             ),
                     )
-            }))
+            })).into_any_element()
     }
 }

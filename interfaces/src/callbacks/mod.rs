@@ -39,14 +39,15 @@ use std::ffi::{c_int, c_void};
 //     unsafe fn from_raw(raw: *mut c_void) -> Self;
 // }
 
-#[repr(C, packed)]
+#[repr(C, packed(4))]
 #[derive(Debug, Default)]
 pub struct CallbackMessage {
     pub user: c_int,
-    pub id: c_int,
+    pub call_id: c_int,
     pub param_pointer: *mut c_void,
     pub param_size: c_int,
 }
 
-pub type GetCallbackFn =
-    unsafe extern "C" fn(pipe: c_int, message: *mut CallbackMessage, call: &mut c_int) -> bool;
+pub type GetCallbackFn = unsafe extern "C" fn(pipe: c_int, message: *mut CallbackMessage) -> bool;
+
+pub type FreeLastCallbackFn = unsafe extern "C" fn(pipe: c_int) -> bool;

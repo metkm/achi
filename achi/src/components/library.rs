@@ -1,3 +1,4 @@
+use crate::components;
 use crate::{models, models::game::Game};
 
 use crate::api::games::{RequestStatus, get_library};
@@ -15,7 +16,6 @@ use gpui_component::{
     ActiveTheme, IconName, PixelsExt, Sizable, StyledExt,
     input::{Input, InputEvent, InputState},
     label::Label,
-    spinner::Spinner,
 };
 
 use log::{error, info};
@@ -165,20 +165,15 @@ impl RenderOnce for Library {
         let entity = self.state.clone();
 
         if let RequestStatus::Pending | RequestStatus::Idle = &state.status {
-            return div()
-                .m_auto()
-                .flex()
-                .gap_2()
-                .child(Spinner::new().icon(IconName::LoaderCircle).large())
-                .child("Loading");
+            return components::loading::Loading.into_any_element();
         }
 
         if let RequestStatus::Error(error) = &state.status {
-            return div().m_auto().child(error.to_string());
+            return div().m_auto().child(error.to_string()).into_any_element();
         }
 
         if state.games.is_empty() {
-            return div().child("Game list is empty!");
+            return div().child("Game list is empty!").into_any_element();
         }
 
         let window_width = window.viewport_size().width.as_f32();
@@ -237,5 +232,6 @@ impl RenderOnce for Library {
                             )
                     })),
             )
+            .into_any_element()
     }
 }

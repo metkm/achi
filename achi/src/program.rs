@@ -102,7 +102,8 @@ impl Render for Program {
                         div()
                             .id("achievements-content")
                             .overflow_scroll()
-                            .flex_1()
+                            .v_flex()
+                            .flex_grow()
                             .child(Achievements::new(&self.achievements_state)),
                     )
             })

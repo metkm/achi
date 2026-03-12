@@ -42,10 +42,23 @@ impl SteamWorker {
         let stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
 
+        let mut reader = BufReader::new(stdout);
+        let mut line = String::new();
+        let mut ready = false;
+
+        while !ready {
+            line.clear();
+            reader.read_line(&mut line).ok();
+
+            if line.trim() == "READY" {
+                ready = true;
+            }
+        }
+
         Ok(Self {
             child,
             stdin,
-            reader: BufReader::new(stdout),
+            reader,
         })
     }
 

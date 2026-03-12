@@ -1,5 +1,7 @@
 use crate::{
-    callbacks::{CallbackMessage, GetCallbackFn, user_stats_received::ICallback},
+    callbacks::{
+        CallbackMessage, FreeLastCallbackFn, GetCallbackFn, user_stats_received::ICallback,
+    },
     error::{Error, Result},
 };
 
@@ -18,7 +20,7 @@ use super::{
     },
 };
 
-use log::info;
+use log::{debug, info};
 use windows::{
     Win32::{
         Foundation::{FreeLibrary, HMODULE},
@@ -132,17 +134,22 @@ impl Steam {
         Ok(Interface::<ISteamClient018>::new(address))
     }
 
-    pub fn get_callback(
-        &self,
-        pipe: c_int,
-        message: *mut  CallbackMessage,
-        call: &mut c_int,
-    ) -> Result<bool> {
+    pub unsafe fn get_callback(&self, pipe: c_int, message: *mut CallbackMessage) -> Result<bool> {
         let _get_callback = self
             .get_export_function::<GetCallbackFn>("Steam_BGetCallback\0")
             .ok_or(Error::UnableToCreateCallback)?;
 
-        let result = unsafe { _get_callback(pipe, message, call) };
+        let result = unsafe { _get_callback(pipe, message) };
+
+        Ok(result)
+    }
+
+    pub fn free_last_callback(&self, pipe: c_int) -> Result<bool> {
+        let _free_last_callback = self
+            .get_export_function::<FreeLastCallbackFn>("Steam_FreeLastCallback\0")
+            .ok_or(Error::UnableToCreateCallback)?;
+
+        let result = unsafe { _free_last_callback(pipe) };
 
         Ok(result)
     }
@@ -154,29 +161,23 @@ impl Steam {
         self.callbacks.push(Box::new(cb));
     }
 
-    pub fn run_callbacks(&self, pipe: i32) {
-        // let message_ptr: *mut CallbackMessage = std::ptr::null_mut();
-        let mut message = CallbackMessage::default();
-        info!("running callbacks {}", self.callbacks.len());
+    pub fn run_callbacks(&mut self, pipe: i32) {
+        let mut cb_msg = unsafe { std::mem::zeroed() };
+        info!("Running callbacks");
 
-        let mut call = 0;
+        unsafe {
+            while self.get_callback(pipe, &mut cb_msg).unwrap_or(false) {
+                for cb in &mut self.callbacks {
+                    debug!("this id: {}, msg cb id: {}", cb.id(), cb_msg.call_id);
 
-        while self
-            .get_callback(pipe, &mut message, &mut call)
-            .unwrap_or(false)
-        {
-            // let message = unsafe { message_ptr.read() };
-            let id = unsafe { std::ptr::addr_of!(message.id).read_unaligned() };
+                    if cb.id() != cb_msg.call_id {
+                        continue;
+                    }
 
-            for cb in &self.callbacks {
-                let msg_id = id;
-                info!("cb id {} msg id {} call {}", cb.id(), msg_id, call);
-
-                if cb.id() != message.id {
-                    continue;
+                    cb.run(cb_msg.param_pointer);
                 }
 
-                cb.run(message.param_pointer);
+                self.free_last_callback(pipe).ok();
             }
         }
     }

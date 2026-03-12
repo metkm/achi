@@ -1,4 +1,8 @@
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::{
+    cell::RefCell,
+    io::{BufRead, BufReader, BufWriter, Write},
+    rc::Rc,
+};
 
 use clap::Parser;
 use interfaces::{
@@ -7,7 +11,7 @@ use interfaces::{
     worker::{Cmd, GetAchievement, GetAchievementResponse},
 };
 
-use log::info;
+use log::{debug, info};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -36,43 +40,29 @@ fn main() -> anyhow::Result<()> {
 
     let user_stats = client.get_steam_user_stats(user, pipe);
 
+    let received_user_stats = Rc::new(RefCell::new(false));
+
     let stats_received_callback: Callback<UserStatsReceivedT> = Callback {
         id: 1101,
         is_server: false,
-        on_run: |result| {
-            println!("inside the callback pogman {:?}", result);
+        on_run: {
+            let received_user_stats = Rc::clone(&received_user_stats);
+
+            Box::new(move |result| {
+                debug!("Got results of UserStatsReceivedT {:?}", result);
+                *received_user_stats.borrow_mut() = true;
+            })
         },
     };
 
     steam.register_callback(stats_received_callback);
 
-    let request_result = unsafe { user_stats.request_userstats() };
-    info!("request result {:#x}", request_result);
+    unsafe { user_stats.request_userstats() };
+    info!("Requested user results.");
 
-    // let stats_received_callback = UserStatsReceivedCallback::new();
-
-    // steam.register_callback(stats_received_callback, |result| {
-    //     println!("inside register callback pog");
-    // });
-
-    // steam.register_callback(|| {
-    //     println!("Hello world!")
-    // });
-
-    // let user_stats_received = UserStatsReceived::new(Box::new(|received| {
-    //     println!("Inside callback {:?}", received);
-    // }));
-
-    // steam.register_callback(Box::new(user_stats_received.inner));
-
-    // let request_result = unsafe { user_stats.request_userstats() };
-    // info!("request result {}", request_result);
-
-    let received = false;
-
-    while !received {
+    while !*received_user_stats.borrow() {
         steam.run_callbacks(pipe);
-        std::thread::sleep(std::time::Duration::from_secs(4));
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     let stdout = std::io::stdout();
@@ -82,6 +72,9 @@ fn main() -> anyhow::Result<()> {
     let mut reader = BufReader::new(stdin.lock());
 
     let mut buf = String::new();
+
+    writeln!(writer, "READY").ok();
+    writer.flush().ok();
 
     loop {
         buf.clear();

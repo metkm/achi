@@ -1,23 +1,23 @@
 use std::ffi::c_void;
 
-#[repr(C, packed)]
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct UserStatsReceivedT {
-    pub steam_id: u64,
     pub game_id: u64,
     pub result: i32,
+    pub steam_id: u64,
 }
 
 pub trait ICallback {
     fn id(&self) -> i32;
     fn is_server(&self) -> bool;
-    fn run(&self, param: *mut c_void);
+    fn run(&mut self, param: *mut c_void);
 }
 
 pub struct Callback<T> {
     pub id: i32,
     pub is_server: bool,
-    pub on_run: fn(T),
+    pub on_run: Box<dyn FnMut(T) + 'static>,
 }
 
 impl ICallback for Callback<UserStatsReceivedT> {
@@ -29,7 +29,7 @@ impl ICallback for Callback<UserStatsReceivedT> {
         self.is_server
     }
 
-    fn run(&self, param: *mut c_void) {
+    fn run(&mut self, param: *mut c_void) {
         let p = param as *mut UserStatsReceivedT;
         unsafe { (self.on_run)((*p).clone()) }
     }
