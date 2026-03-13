@@ -1,16 +1,20 @@
 use std::{
     cell::RefCell,
     io::{BufRead, BufReader, BufWriter, Write},
-    rc::Rc, time::{Duration, Instant},
+    rc::Rc,
+    time::{Duration, Instant},
 };
 
 use anyhow::bail;
 use clap::Parser;
 use interfaces::{
-    callbacks::user_stats_received::{Callback, UserStatsReceivedT}, constants::USER_STATS_RECEIVED_ID, steam::Steam, worker::{Cmd, GetAchievement, GetAchievementResponse}
+    callbacks::user_stats_received::{Callback, UserStatsReceivedT},
+    constants::USER_STATS_RECEIVED_ID,
+    steam::Steam,
+    worker::{Cmd, GetAchievement, GetAchievementResponse},
 };
 
-use log::{debug, info, error};
+use log::{debug, error, info};
 
 #[derive(Parser, Debug)]
 struct Args {

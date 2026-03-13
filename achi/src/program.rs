@@ -11,7 +11,7 @@ use log::error;
 
 use gpui_component::button::Button;
 use gpui_component::label::Label;
-use gpui_component::{StyledExt, TitleBar};
+use gpui_component::{IconName, StyledExt, TitleBar};
 
 pub struct Program {
     library_state: Entity<LibraryState>,
@@ -93,11 +93,15 @@ impl Render for Program {
                     .v_flex()
                     .size_full()
                     .gap_2()
-                    .child(Button::new("back").label("Go Back").on_click(cx.listener(
-                        move |_, _, _, cx| {
-                            LibraryState::select_game(&library_entity, cx, None);
-                        },
-                    )))
+                    .child(
+                        Button::new("back")
+                            .max_w_48()
+                            .icon(IconName::ArrowLeft)
+                            .label("Go Back")
+                            .on_click(cx.listener(move |_, _, _, cx| {
+                                LibraryState::select_game(&library_entity, cx, None);
+                            })),
+                    )
                     .child(
                         div()
                             .id("achievements-content")

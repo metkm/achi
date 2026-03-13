@@ -8,7 +8,7 @@ use crate::{
 use std::sync::{Arc, Mutex};
 
 use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
-use gpui_component::{StyledExt, switch::Switch};
+use gpui_component::{ActiveTheme, StyledExt, switch::Switch};
 
 use interfaces::{steam::Steam, worker::Cmd, worker::SteamWorker};
 
@@ -184,7 +184,7 @@ impl RenderOnce for Achievements {
                             }
                         ))
                         .rounded_md()
-                        .size_24(),
+                        .size_16(),
                     )
                     .child(
                         div()
@@ -192,11 +192,11 @@ impl RenderOnce for Achievements {
                             .justify_between()
                             .flex_grow()
                             .items_center()
-                            .p_2()
+                            .p_1()
                             .child(
                                 div()
                                     .child(achi.name.clone())
-                                    .child(div().child(achi.desc.clone()).text_sm()),
+                                    .child(div().child(achi.desc.clone()).text_sm().text_color(cx.theme().muted_foreground)),
                             )
                             .child(
                                 Switch::new(ElementId::Name(format!("{}_enabled", achi.id).into()))

@@ -1,11 +1,11 @@
 pub mod apps;
 pub mod callbacks;
+pub mod constants;
 pub mod error;
 pub mod native;
 pub mod steam;
 pub mod userstats;
 pub mod worker;
-pub mod constants;
 
 use native::VTable;
 use std::{ffi::c_int, sync::atomic::AtomicPtr};
