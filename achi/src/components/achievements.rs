@@ -7,8 +7,8 @@ use crate::{
 
 use std::sync::{Arc, Mutex};
 
-use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img};
-use gpui_component::{ActiveTheme, StyledExt, switch::Switch};
+use gpui::{Context, ElementId, Entity, IntoElement, ParentElement, RenderOnce, Styled, div, img, uniform_list};
+use gpui_component::{ActiveTheme, switch::Switch};
 
 use interfaces::{steam::Steam, worker::Cmd, worker::SteamWorker};
 
@@ -161,12 +161,18 @@ impl RenderOnce for Achievements {
             return components::loading::Loading.into_any_element();
         }
 
-        div()
-            .v_flex()
-            .flex_grow()
-            .gap_2()
-            .children(state.achievements.iter().map(|achi| {
+        let count = state.achievements.len();
+        let entity = entity.clone();
+
+        return uniform_list("achievements-list", count, move |range, _window, cx| {
+            let state = entity.read(cx);
+
+            let result: Vec<gpui::Div> = range.map(|i| {
                 let entity = entity.clone();
+
+                let Some(achi) = entity.read(cx).achievements.get(i) else {
+                    return div().child("hm");
+                };
 
                 div()
                     .flex()
@@ -242,6 +248,12 @@ impl RenderOnce for Achievements {
                                     }),
                             ),
                     )
-            })).into_any_element()
+            })
+                .collect();
+
+            result
+        })
+            .h_full()
+            .into_any_element();
     }
 }
