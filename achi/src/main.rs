@@ -1,5 +1,4 @@
-// #![allow(dead_code, unused)]
-// #![cfg_attr(not(debug_assertions), warn(dead_code, unused))]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod api;
 mod app;
